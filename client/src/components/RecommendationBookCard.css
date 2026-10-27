@@ -1,0 +1,90 @@
+
+/* ============================================================
+   SHARED RECOMMENDATION BOOK CARD
+   ============================================================ */
+
+.recommendation-book-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  height: 100%;
+}
+
+.recommendation-book-cover {
+  display: block;
+  width: 100%;
+  height: 240px;
+  object-fit: contain;
+  background: #f9fafb;
+}
+
+.recommendation-book-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 240px;
+  padding: 1rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  text-align: center;
+}
+
+.recommendation-book-details {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1rem;
+}
+
+.recommendation-book-details h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.4;
+  color: #111827;
+}
+
+.recommendation-book-details p {
+  margin: 0;
+}
+
+.recommendation-book-author,
+.recommendation-book-year {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.recommendation-book-reason {
+  flex: 1;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.recommendation-book-reason strong {
+  color: #111827;
+}
+
+.recommendation-book-button {
+  width: 100%;
+  margin-top: auto;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #059669;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.recommendation-book-button:hover:not(:disabled) {
+  background: #047857;
+}
+
+.recommendation-book-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
