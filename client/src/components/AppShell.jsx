@@ -138,6 +138,7 @@ export default function AppShell({
             <div className="bs-avatar" aria-hidden="true">
               {displayName.charAt(0).toUpperCase()}
             </div>
+
             <div className="bs-user-copy">
               <strong>{displayName}</strong>
               <small>Your library</small>
@@ -225,6 +226,7 @@ export default function AppShell({
                   >
                     <span aria-hidden="true">＋</span> View my bookshelf
                   </button>
+
                   <button
                     className="bs-button bs-button-secondary"
                     type="button"
@@ -234,13 +236,18 @@ export default function AppShell({
                   </button>
                 </div>
               </div>
+
               <div className="bs-welcome-art" aria-hidden="true">
                 <span className="bs-art-orbit bs-art-orbit-one" />
                 <span className="bs-art-orbit bs-art-orbit-two" />
                 <div className="bs-art-book bs-art-book-back" />
                 <div className="bs-art-book bs-art-book-front">
                   <span>THE</span>
-                  <strong>READING<br />ROOM</strong>
+                  <strong>
+                    READING
+                    <br />
+                    ROOM
+                  </strong>
                   <i />
                 </div>
                 <span className="bs-art-star">✦</span>
@@ -258,6 +265,7 @@ export default function AppShell({
                   <h2 id="bs-bookshelf-title">My Bookshelf</h2>
                   <p>Your saved books and reading progress.</p>
                 </div>
+
                 <button
                   className="bs-text-button"
                   type="button"
@@ -266,6 +274,7 @@ export default function AppShell({
                   Add books <span aria-hidden="true">→</span>
                 </button>
               </div>
+
               <div className="bs-feature-content">{bookshelf}</div>
             </section>
 
@@ -281,6 +290,7 @@ export default function AppShell({
                   <p>Search the catalog for your next great read.</p>
                 </div>
               </div>
+
               <div className="bs-feature-content">{discover}</div>
             </section>
 
@@ -312,6 +322,7 @@ export default function AppShell({
                 >
                   <span aria-hidden="true">▤</span> Content-based
                 </button>
+
                 <button
                   type="button"
                   className={
@@ -331,41 +342,32 @@ export default function AppShell({
               </div>
             </section>
 
-            <section
-              className="bs-section bs-research-mobile"
-              id="section-research"
-              aria-labelledby="bs-research-mobile-title"
-            >
-              <div className="bs-section-heading">
-                <div>
-                  <span className="bs-eyebrow">YOUR AI WORKSPACE</span>
-                  <h2 id="bs-research-mobile-title">AI Research</h2>
-                  <p>Explore questions, books, and ideas.</p>
-                </div>
-              </div>
-              <div className="bs-feature-content">{researchAssistant}</div>
-            </section>
-
             <footer className="bs-footer">
               <span>Bookshelf PoweredAI</span>
               <span>Your next chapter starts here.</span>
             </footer>
           </div>
 
-          <aside className="bs-research-column" aria-label="AI research panel">
+          <aside
+            className="bs-research-column"
+            id="section-research"
+            aria-label="AI research panel"
+          >
             <div className="bs-research-heading">
               <div>
                 <span className="bs-eyebrow">YOUR AI WORKSPACE</span>
                 <h2>Research Assistant</h2>
               </div>
-              <span className="bs-ai-badge" aria-label="AI">✧</span>
+              <span className="bs-ai-badge" aria-label="AI">
+                ✧
+              </span>
             </div>
+
             <p className="bs-research-description">
               Explore ideas, ask questions, and research your next read.
             </p>
-            <div className="bs-research-body">
-              {researchAssistant}
-            </div>
+
+            <div className="bs-research-body">{researchAssistant}</div>
           </aside>
         </div>
       </main>
