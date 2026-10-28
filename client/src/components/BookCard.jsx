@@ -1,6 +1,8 @@
 
 import { useState } from "react";
 import { apiRequest } from "../lib/api";
+
+import { apiRequest, API_ORIGIN } from "../lib/api";
 import "./BookCard.css";
 
 function getOpenLibrarySearchUrl(book) {
@@ -182,7 +184,11 @@ export default function BookCard({ book, onUpdated, onDeleted }) {
         {book.coverUrl && !coverFailed ? (
           <img
             className="book-cover"
-            src={book.coverUrl}
+           src={
+  book.coverUrl?.startsWith("/uploads/")
+    ? `${API_ORIGIN}${book.coverUrl}`
+    : book.coverUrl
+}
             alt={`Cover of ${book.title}`}
             loading="lazy"
             onError={() => setCoverFailed(true)}

@@ -1,12 +1,16 @@
 const API_URL = "http://localhost:5000/api";
 
+export const API_ORIGIN = API_URL.replace(/\/api\/?$/, "");
+
 export async function apiRequest(path, options = {}) {
   const headers = {
     ...options.headers,
   };
 
-  // Only send Content-Type when we actually send JSON.
-  if (options.body !== undefined) {
+  if (
+    options.body !== undefined &&
+    !(options.body instanceof FormData)
+  ) {
     headers["Content-Type"] = "application/json";
   }
 

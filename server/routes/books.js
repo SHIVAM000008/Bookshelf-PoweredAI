@@ -1,8 +1,14 @@
 
+const {
+  uploadBookCover,
+  saveCover,
+  deleteCover,
+} = require("../middleware/bookCoverUpload");
 const express = require("express");
 const mongoose = require("mongoose");
 const Book = require("../models/Book");
 const { protect } = require("../middleware/auth");
+
 
 const router = express.Router();
 
@@ -16,7 +22,7 @@ function normalizeText(value) {
 
 // POST /api/books - Add a book to the logged-in user's bookshelf.
 // Duplicate saves return the existing book instead of creating another.
-router.post("/", protect, async (req, res) => {
+router.post("/", protect, uploadBookCover, async (req, res) => {
   try {
     const {
       title,
@@ -100,7 +106,11 @@ router.post("/", protect, async (req, res) => {
         alreadySaved: true,
       });
     }
+let uploadedCoverUrl = "";
 
+if (req.file) {
+  uploadedCoverUrl = await saveCover(req.file);
+}
     const book = await Book.create({
       owner: req.user._id,
       title: cleanTitle,
@@ -108,8 +118,9 @@ router.post("/", protect, async (req, res) => {
       genre,
       status,
       description,
-      coverUrl:
-        typeof coverUrl === "string" ? coverUrl.trim() : "",
+      coverUrl: uploadedCoverUrl ||
+  (typeof coverUrl === "string" ? coverUrl.trim() : ""),
+coverType: uploadedCoverUrl ? "upload" : "external",
       openLibraryKey: cleanKey,
     });
 

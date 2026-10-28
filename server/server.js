@@ -4,6 +4,9 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+
+const path = require("path");
+
 const connectDB = require("./config/db");
 
 const authRoutes = require("./routes/auth");
@@ -27,6 +30,14 @@ app.use(
 // 2. Parse JSON and cookies
 app.use(express.json());
 app.use(cookieParser());
+app.use(
+  "/uploads/book-covers",
+  express.static(path.join(__dirname, "uploads", "book-covers"), {
+    dotfiles: "deny",
+    index: false,
+    maxAge: "1d",
+  })
+);
 
 // 3. Register API routes
 app.use("/api/auth", authRoutes);

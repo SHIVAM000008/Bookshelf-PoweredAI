@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { apiRequest } from "../lib/api";
 
 const initialForm = {
@@ -10,18 +10,57 @@ const initialForm = {
   description: "",
 };
 
+const MAX_COVER_SIZE = 5 * 1024 * 1024;
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 export default function BookForm({ onBookAdded }) {
   const [form, setForm] = useState(initialForm);
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (!coverFile) {
+      setCoverPreview("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(coverFile);
+    setCoverPreview(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [coverFile]);
+
   function handleChange(event) {
     const { name, value } = event.target;
+    setForm((previous) => ({ ...previous, [name]: value }));
+  }
 
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
+  function handleCoverChange(event) {
+    const file = event.target.files?.[0];
+    setError("");
+
+    if (!file) {
+      setCoverFile(null);
+      return;
+    }
+
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      setError("Choose a JPEG, PNG, or WebP image.");
+      event.target.value = "";
+      setCoverFile(null);
+      return;
+    }
+
+    if (file.size > MAX_COVER_SIZE) {
+      setError("Cover image must be 5 MB or smaller.");
+      event.target.value = "";
+      setCoverFile(null);
+      return;
+    }
+
+    setCoverFile(file);
   }
 
   async function handleSubmit(event) {
@@ -30,15 +69,27 @@ export default function BookForm({ onBookAdded }) {
     setSaving(true);
 
     try {
+      const body = new FormData();
+
+      Object.entries(form).forEach(([key, value]) => {
+        body.append(key, value);
+      });
+
+      if (coverFile) {
+        body.append("cover", coverFile);
+      }
+
       const data = await apiRequest("/books", {
         method: "POST",
-        body: JSON.stringify(form),
+        body,
       });
 
       onBookAdded(data.book);
       setForm(initialForm);
+      setCoverFile(null);
+      event.target.reset();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Could not add this book.");
     } finally {
       setSaving(false);
     }
@@ -82,11 +133,7 @@ export default function BookForm({ onBookAdded }) {
 
       <label>
         Reading Status
-        <select
-          name="status"
-          value={form.status}
-          onChange={handleChange}
-        >
+        <select name="status" value={form.status} onChange={handleChange}>
           <option value="Want to Read">Want to Read</option>
           <option value="Reading">Reading</option>
           <option value="Finished">Finished</option>
@@ -103,6 +150,33 @@ export default function BookForm({ onBookAdded }) {
           rows={3}
         />
       </label>
+
+      <label>
+        Cover Image (optional)
+        <input
+          type="file"
+          name="cover"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleCoverChange}
+        />
+      </label>
+
+      {coverPreview && (
+        <div className="book-cover-preview">
+          <img src={coverPreview} alt="Selected book cover preview" />
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => {
+              setCoverFile(null);
+              const input = document.querySelector('input[name="cover"]');
+              if (input) input.value = "";
+            }}
+          >
+            Remove selected image
+          </button>
+        </div>
+      )}
 
       {error && <p className="error" role="alert">{error}</p>}
 
