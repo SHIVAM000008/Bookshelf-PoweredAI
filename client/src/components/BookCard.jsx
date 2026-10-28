@@ -2,6 +2,11 @@
 import { useState } from "react";
 import { apiRequest } from "../lib/api";
 
+function getOpenLibrarySearchUrl(book) {
+  const query = [book?.title, book?.author].filter(Boolean).join(" ");
+  return `https://openlibrary.org/search?q=${encodeURIComponent(query)}`;
+}
+
 export default function BookCard({ book, onUpdated, onDeleted }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -17,11 +22,7 @@ export default function BookCard({ book, onUpdated, onDeleted }) {
 
   function handleChange(event) {
     const { name, value } = event.target;
-
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
+    setForm((previous) => ({ ...previous, [name]: value }));
   }
 
   async function handleSave(event) {
@@ -38,7 +39,7 @@ export default function BookCard({ book, onUpdated, onDeleted }) {
       onUpdated(data.book);
       setEditing(false);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Could not save changes.");
     } finally {
       setSaving(false);
     }
@@ -55,13 +56,10 @@ export default function BookCard({ book, onUpdated, onDeleted }) {
     setError("");
 
     try {
-      await apiRequest(`/books/${book._id}`, {
-        method: "DELETE",
-      });
-
+      await apiRequest(`/books/${book._id}`, { method: "DELETE" });
       onDeleted(book._id);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Could not delete this book.");
       setSaving(false);
     }
   }
@@ -74,7 +72,6 @@ export default function BookCard({ book, onUpdated, onDeleted }) {
       status: book.status,
       description: book.description || "",
     });
-
     setError("");
     setEditing(false);
   }
@@ -83,7 +80,7 @@ export default function BookCard({ book, onUpdated, onDeleted }) {
     return (
       <article className="book-card">
         <form className="book-form" onSubmit={handleSave}>
-          <h3>Edit Book</h3>
+          <h3>Edit book</h3>
 
           <label>
             Title
@@ -118,12 +115,8 @@ export default function BookCard({ book, onUpdated, onDeleted }) {
           </label>
 
           <label>
-            Reading Status
-            <select
-              name="status"
-              value={form.status}
-              onChange={handleChange}
-            >
+            Reading status
+            <select name="status" value={form.status} onChange={handleChange}>
               <option value="Want to Read">Want to Read</option>
               <option value="Reading">Reading</option>
               <option value="Finished">Finished</option>
@@ -145,7 +138,7 @@ export default function BookCard({ book, onUpdated, onDeleted }) {
 
           <div className="book-actions">
             <button type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? "Saving..." : "Save changes"}
             </button>
             <button
               type="button"
@@ -164,15 +157,34 @@ export default function BookCard({ book, onUpdated, onDeleted }) {
   return (
     <article className="book-card">
       <h3>{book.title}</h3>
-      <p>By {book.author}</p>
-      <p>Genre: {book.genre || "Not specified"}</p>
-      <p>Status: {book.status}</p>
+      <p className="book-author">By {book.author}</p>
 
-      {book.description && <p>{book.description}</p>}
+      <p className="book-meta">
+        <span>Genre</span>
+        <strong>{book.genre || "Not specified"}</strong>
+      </p>
+
+      <p className="book-meta">
+        <span>Reading status</span>
+        <strong className="book-status">{book.status}</strong>
+      </p>
+
+      {book.description && (
+        <p className="book-description">{book.description}</p>
+      )}
 
       {error && <p className="error" role="alert">{error}</p>}
 
       <div className="book-actions">
+        <a
+          className="book-open-button"
+          href={getOpenLibrarySearchUrl(book)}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Open Book <span aria-hidden="true">↗</span>
+        </a>
+
         <button
           type="button"
           onClick={() => setEditing(true)}
@@ -180,6 +192,7 @@ export default function BookCard({ book, onUpdated, onDeleted }) {
         >
           Edit
         </button>
+
         <button
           type="button"
           className="delete-button"

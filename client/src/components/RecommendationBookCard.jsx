@@ -1,20 +1,23 @@
 
 import "./RecommendationBookCard.css";
 
-/**
- * Shared recommendation book card.
- *
- * Used by:
- * - Recommendations.jsx (content-based)
- * - AIRecommendations.jsx (AI-powered)
- *
- * Props:
- * book       - Recommended book data from the backend
- * onAdd      - Function to save the selected book
- * isAdding   - Whether this book is currently being saved
- * isAdded    - Whether this book was already added
- * disabled   - Whether saving is temporarily disabled
- */
+function getOpenBookUrl(book) {
+  const key = book?.openLibraryKey;
+
+  // A catalog identifier lets us link directly to its Open Library page.
+  if (typeof key === "string" && key.startsWith("/works/")) {
+    return `https://openlibrary.org${key}`;
+  }
+
+  if (typeof key === "string" && key.startsWith("/books/")) {
+    return `https://openlibrary.org${key}`;
+  }
+
+  // Recommendations without a usable identifier should still be discoverable.
+  const query = [book?.title, book?.author].filter(Boolean).join(" ");
+  return `https://openlibrary.org/search?q=${encodeURIComponent(query)}`;
+}
+
 export default function RecommendationBookCard({
   book,
   onAdd,
@@ -22,9 +25,10 @@ export default function RecommendationBookCard({
   isAdded = false,
   disabled = false,
 }) {
+  const openBookUrl = getOpenBookUrl(book);
+
   return (
     <article className="recommendation-book-card">
-      {/* Book cover */}
       {book.coverUrl ? (
         <img
           className="recommendation-book-cover"
@@ -34,16 +38,16 @@ export default function RecommendationBookCard({
         />
       ) : (
         <div className="recommendation-book-placeholder">
-          No cover available
+          <span aria-hidden="true">▤</span>
+          <span>No cover available</span>
         </div>
       )}
 
-      {/* Book information */}
       <div className="recommendation-book-details">
         <h3>{book.title}</h3>
 
         <p className="recommendation-book-author">
-          {book.author}
+          {book.author || "Author unknown"}
         </p>
 
         {book.firstPublishYear && (
@@ -52,26 +56,35 @@ export default function RecommendationBookCard({
           </p>
         )}
 
-        {/* Personalized recommendation explanation */}
         <p className="recommendation-book-reason">
           <strong>Why this book?</strong>{" "}
           {book.recommendedBecause ||
             "This book matches your reading interests."}
         </p>
 
-        {/* Add to bookshelf */}
-        <button
-          type="button"
-          onClick={() => onAdd(book)}
-          disabled={disabled || isAdding || isAdded}
-          className="recommendation-book-button"
-        >
-          {isAdded
-            ? "Added to Bookshelf"
-            : isAdding
-              ? "Adding..."
-              : "Add to My Bookshelf"}
-        </button>
+        <div className="recommendation-book-actions">
+          <a
+            className="recommendation-book-open"
+            href={openBookUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open Book <span aria-hidden="true">↗</span>
+          </a>
+
+          <button
+            type="button"
+            onClick={() => onAdd(book)}
+            disabled={disabled || isAdding || isAdded}
+            className="recommendation-book-button"
+          >
+            {isAdded
+              ? "Added to Bookshelf"
+              : isAdding
+                ? "Adding..."
+                : "Add to Bookshelf"}
+          </button>
+        </div>
       </div>
     </article>
   );
