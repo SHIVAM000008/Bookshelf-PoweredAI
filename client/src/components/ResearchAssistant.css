@@ -1,11 +1,13 @@
 
 .research-assistant {
-  margin-top: 36px;
-  padding: 24px;
+  min-width: 0;
+  margin-top: 0;
+  padding: 16px;
   text-align: left;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-primary);
 }
 
 .research-header {
@@ -13,58 +15,73 @@
   align-items: flex-start;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 22px;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
 .research-header h2 {
   margin: 0 0 8px;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
 }
 
 .research-header p {
   margin: 0;
-  color: #64748b;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 .research-header button,
 .research-form-footer button {
-  padding: 11px 16px;
-  border: 0;
-  border-radius: 8px;
-  background: #2563eb;
-  color: #fff;
+  padding: 10px 14px;
+  border: 1px solid var(--brand-primary);
+  border-radius: var(--radius-sm);
+  background: var(--brand-primary);
+  color: #ffffff;
   font: inherit;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.research-header button:hover,
+.research-form-footer button:hover:not(:disabled) {
+  background: var(--brand-hover);
 }
 
 .research-layout {
   display: grid;
-  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 210px) minmax(0, 1fr);
+  gap: 12px;
   min-width: 0;
 }
 
 .research-sidebar {
-  padding: 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #f8fafc;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
 }
 
 .research-sidebar h3 {
   margin-top: 0;
+  color: var(--text-primary);
+  font-size: 0.95rem;
 }
 
 .research-chat-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 0;
-  border-bottom: 1px solid #e2e8f0;
+  min-width: 0;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .research-chat-item.active {
-  background: #eff6ff;
+  border-radius: 6px;
+  background: var(--brand-soft);
 }
 
 .research-chat-open {
@@ -76,18 +93,28 @@
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #1e293b;
+  color: var(--text-primary);
   font: inherit;
+  font-size: 0.88rem;
   cursor: pointer;
 }
 
+.research-chat-open:hover {
+  background: var(--bg-hover);
+}
+
 .research-delete-button {
+  flex-shrink: 0;
   padding: 6px;
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #b91c1c;
+  color: #d46b83;
   cursor: pointer;
+}
+
+.research-delete-button:hover {
+  background: var(--bg-hover);
 }
 
 .research-conversation {
@@ -95,53 +122,62 @@
   flex-direction: column;
   min-width: 0;
   min-height: 420px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
 }
 
 .research-messages {
   flex: 1;
+  min-width: 0;
   min-height: 260px;
   max-height: 600px;
   overflow-y: auto;
-  padding: 18px;
+  padding: 14px;
 }
 
 .research-empty {
-  padding: 40px 12px;
+  padding: 32px 12px;
   text-align: center;
-  color: #64748b;
+  color: var(--text-secondary);
+  line-height: 1.6;
 }
 
 .research-empty h3 {
-  color: #1e293b;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
 }
 
 .research-message {
-  max-width: 90%;
-  margin-bottom: 16px;
-  padding: 12px 14px;
+  max-width: 95%;
+  margin-bottom: 14px;
+  padding: 11px 13px;
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   overflow-wrap: anywhere;
+  line-height: 1.6;
 }
 
 .research-message p {
-  margin-bottom: 0;
+  margin: 0;
   white-space: pre-wrap;
 }
 
 .research-message.user {
   margin-left: auto;
-  background: #eff6ff;
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+  color: #ffffff;
 }
 
 .research-message.assistant {
   margin-right: auto;
-  background: #f1f5f9;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .research-thinking {
-  color: #64748b;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -149,27 +185,42 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 16px;
-  border-top: 1px solid #e2e8f0;
+  min-width: 0;
+  padding: 12px;
+  border-top: 1px solid var(--border-color);
 }
 
 .research-prompt-form textarea {
+  display: block;
   width: 100%;
+  min-height: 90px;
   box-sizing: border-box;
   padding: 12px;
   resize: vertical;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   font: inherit;
+  line-height: 1.5;
+}
+
+.research-prompt-form textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.research-prompt-form textarea:focus {
+  border-color: var(--brand-primary);
 }
 
 .research-form-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  color: #64748b;
-  font-size: 13px;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
 }
 
 .research-form-footer button:disabled {
@@ -178,16 +229,22 @@
 }
 
 .research-error {
-  color: #b91c1c;
+  color: #d46b83;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 650px) {
   .research-assistant {
-    padding: 16px;
+    padding: 12px;
   }
 
   .research-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .research-sidebar {
+    max-height: 220px;
+    overflow-y: auto;
   }
 
   .research-conversation {
@@ -195,6 +252,23 @@
   }
 
   .research-messages {
+    min-height: 220px;
     max-height: 450px;
+    padding: 10px;
+  }
+
+  .research-message {
+    max-width: 100%;
+  }
+
+  .research-prompt-form {
+    padding: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .research-header button,
+  .research-form-footer button {
+    transition: none;
   }
 }
