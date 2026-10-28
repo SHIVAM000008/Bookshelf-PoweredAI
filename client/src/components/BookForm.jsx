@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiRequest } from "../lib/api";
 
 const initialForm = {
@@ -16,12 +16,39 @@ const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export default function BookForm({ onBookAdded }) {
   const [form, setForm] = useState(initialForm);
   const [coverFile, setCoverFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const coverPreview = useMemo(
-  () => (coverFile ? URL.createObjectURL(coverFile) : ""),
-  [coverFile]
-);
+
+  const coverInputRef = useRef(null);
+  const previewUrlRef = useRef("");
+
+  function clearCoverPreview() {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = "";
+    }
+
+    setCoverPreview("");
+  }
+
+  function replaceCoverPreview(file) {
+    clearCoverPreview();
+
+    if (file) {
+      const url = URL.createObjectURL(file);
+      previewUrlRef.current = url;
+      setCoverPreview(url);
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+      }
+    };
+  }, []);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -33,6 +60,7 @@ export default function BookForm({ onBookAdded }) {
     setError("");
 
     if (!file) {
+      clearCoverPreview();
       setCoverFile(null);
       return;
     }
@@ -40,6 +68,7 @@ export default function BookForm({ onBookAdded }) {
     if (!ACCEPTED_TYPES.includes(file.type)) {
       setError("Choose a JPEG, PNG, or WebP image.");
       event.target.value = "";
+      clearCoverPreview();
       setCoverFile(null);
       return;
     }
@@ -47,15 +76,32 @@ export default function BookForm({ onBookAdded }) {
     if (file.size > MAX_COVER_SIZE) {
       setError("Cover image must be 5 MB or smaller.");
       event.target.value = "";
+      clearCoverPreview();
       setCoverFile(null);
       return;
     }
 
+    replaceCoverPreview(file);
     setCoverFile(file);
   }
 
+  function handleRemoveCover() {
+    clearCoverPreview();
+    setCoverFile(null);
+
+    if (coverInputRef.current) {
+      coverInputRef.current.value = "";
+    }
+  }
+
+  
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (saving) return;
+
+    const formElement = event.currentTarget;
+
     setError("");
     setSaving(true);
 
@@ -75,16 +121,24 @@ export default function BookForm({ onBookAdded }) {
         body,
       });
 
-      onBookAdded(data.book);
+      onBookAdded?.(data.book);
+
       setForm(initialForm);
       setCoverFile(null);
-      event.target.reset();
+      clearCoverPreview();
+
+      if (coverInputRef.current) {
+        coverInputRef.current.value = "";
+      }
+
+      formElement.reset();
     } catch (err) {
       setError(err.message || "Could not add this book.");
     } finally {
       setSaving(false);
     }
   }
+
 
   return (
     <form className="book-form" onSubmit={handleSubmit}>
@@ -124,7 +178,11 @@ export default function BookForm({ onBookAdded }) {
 
       <label>
         Reading Status
-        <select name="status" value={form.status} onChange={handleChange}>
+        <select
+          name="status"
+          value={form.status}
+          onChange={handleChange}
+        >
           <option value="Want to Read">Want to Read</option>
           <option value="Reading">Reading</option>
           <option value="Finished">Finished</option>
@@ -145,6 +203,7 @@ export default function BookForm({ onBookAdded }) {
       <label>
         Cover Image (optional)
         <input
+          ref={coverInputRef}
           type="file"
           name="cover"
           accept="image/jpeg,image/png,image/webp"
@@ -154,22 +213,26 @@ export default function BookForm({ onBookAdded }) {
 
       {coverPreview && (
         <div className="book-cover-preview">
-          <img src={coverPreview} alt="Selected book cover preview" />
+          <img
+            src={coverPreview}
+            alt="Selected book cover preview"
+          />
+
           <button
             type="button"
             className="secondary-button"
-            onClick={() => {
-              setCoverFile(null);
-              const input = document.querySelector('input[name="cover"]');
-              if (input) input.value = "";
-            }}
+            onClick={handleRemoveCover}
           >
             Remove selected image
           </button>
         </div>
       )}
 
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
 
       <button type="submit" disabled={saving}>
         {saving ? "Saving..." : "Add Book"}

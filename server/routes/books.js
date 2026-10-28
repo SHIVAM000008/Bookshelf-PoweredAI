@@ -207,10 +207,7 @@ router.patch("/:id", protect, async (req, res) => {
         owner: req.user._id,
       },
       { $set: updates },
-      {
-        new: true,
-        runValidators: true,
-      }
+      { returnDocument: "after" }
     );
 
     if (!book) {

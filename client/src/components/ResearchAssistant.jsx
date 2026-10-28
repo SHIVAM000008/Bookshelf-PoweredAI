@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+
+import { useEffect, useRef, useState } from "react";
 import { apiRequest } from "../lib/api";
 import "./ResearchAssistant.css";
 
@@ -11,21 +12,40 @@ export default function ResearchAssistant() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
-  async function loadChats() {
-    setError("");
-
-    try {
-      const data = await apiRequest("/research/chats");
-      setChats(data.chats || []);
-    } catch (err) {
-      setError(err.message || "Could not load conversations.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const mountedRef = useRef(false);
+  const chatRequestIdRef = useRef(0);
 
   useEffect(() => {
-    loadChats();
+    mountedRef.current = true;
+    const controller = new AbortController();
+
+    async function fetchChats() {
+      try {
+        const data = await apiRequest("/research/chats", {
+          signal: controller.signal,
+        });
+
+        if (!mountedRef.current || controller.signal.aborted) return;
+
+        setChats(data.chats || []);
+      } catch (err) {
+        if (!mountedRef.current || controller.signal.aborted) return;
+
+        setError(err.message || "Could not load conversations.");
+      } finally {
+        if (mountedRef.current && !controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchChats();
+
+    return () => {
+      mountedRef.current = false;
+      chatRequestIdRef.current += 1;
+      controller.abort();
+    };
   }, []);
 
   async function createChat() {
@@ -36,6 +56,8 @@ export default function ResearchAssistant() {
         method: "POST",
         body: JSON.stringify({}),
       });
+
+      if (!mountedRef.current) return;
 
       const chat = data.chat;
 
@@ -48,6 +70,7 @@ export default function ResearchAssistant() {
       setMessages([]);
       setPrompt("");
     } catch (err) {
+      if (!mountedRef.current) return;
       setError(err.message || "Could not create a conversation.");
     }
   }
@@ -55,18 +78,39 @@ export default function ResearchAssistant() {
   async function openChat(chatId) {
     if (activeChat?._id === chatId) return;
 
+    const requestId = ++chatRequestIdRef.current;
+
     setError("");
     setLoading(true);
 
     try {
       const data = await apiRequest(`/research/chats/${chatId}`);
 
+      if (
+        !mountedRef.current ||
+        requestId !== chatRequestIdRef.current
+      ) {
+        return;
+      }
+
       setActiveChat(data.chat);
       setMessages(data.chat.messages || []);
     } catch (err) {
+      if (
+        !mountedRef.current ||
+        requestId !== chatRequestIdRef.current
+      ) {
+        return;
+      }
+
       setError(err.message || "Could not open this conversation.");
     } finally {
-      setLoading(false);
+      if (
+        mountedRef.current &&
+        requestId === chatRequestIdRef.current
+      ) {
+        setLoading(false);
+      }
     }
   }
 
@@ -92,6 +136,8 @@ export default function ResearchAssistant() {
         const chat = created.chat;
         chatId = chat._id;
 
+        if (!mountedRef.current) return;
+
         setActiveChat(chat);
         setChats((previous) => [
           chat,
@@ -107,17 +153,24 @@ export default function ResearchAssistant() {
         }
       );
 
+      if (!mountedRef.current) return;
+
       setMessages((previous) => [...previous, ...data.messages]);
       setPrompt("");
 
-      // Refresh titles and activity timestamps without losing the
-      // currently open conversation.
       const refreshed = await apiRequest("/research/chats");
+
+      if (!mountedRef.current) return;
+
       setChats(refreshed.chats || []);
     } catch (err) {
+      if (!mountedRef.current) return;
+
       if (err.status === 409 && chatId) {
         try {
           const latest = await apiRequest(`/research/chats/${chatId}`);
+
+          if (!mountedRef.current) return;
 
           setActiveChat(latest.chat);
           setMessages(latest.chat.messages || []);
@@ -128,6 +181,8 @@ export default function ResearchAssistant() {
               "your question again if it wasn't answered."
           );
         } catch {
+          if (!mountedRef.current) return;
+
           setError(
             "This conversation changed, but its latest messages " +
               "could not be loaded. Please reopen the conversation."
@@ -137,12 +192,13 @@ export default function ResearchAssistant() {
         setError(err.message || "Could not send your message.");
       }
     } finally {
-      setSending(false);
+      if (mountedRef.current) {
+        setSending(false);
+      }
     }
   }
 
   async function deleteChat(chatId) {
-    // Preserve the existing confirmation before permanently deleting.
     const confirmed = window.confirm(
       "Delete this research conversation permanently?"
     );
@@ -156,16 +212,20 @@ export default function ResearchAssistant() {
         method: "DELETE",
       });
 
+      if (!mountedRef.current) return;
+
       setChats((previous) =>
         previous.filter((chat) => chat._id !== chatId)
       );
 
       if (activeChat?._id === chatId) {
+        chatRequestIdRef.current += 1;
         setActiveChat(null);
         setMessages([]);
         setPrompt("");
       }
     } catch (err) {
+      if (!mountedRef.current) return;
       setError(err.message || "Could not delete this conversation.");
     }
   }
@@ -180,11 +240,7 @@ export default function ResearchAssistant() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={createChat}
-          disabled={sending}
-        >
+        <button type="button" onClick={createChat} disabled={sending}>
           + New conversation
         </button>
       </header>
