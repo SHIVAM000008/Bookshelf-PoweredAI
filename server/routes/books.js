@@ -1,23 +1,32 @@
 
 const express = require("express");
+const mongoose = require("mongoose");
 const Book = require("../models/Book");
 const { protect } = require("../middleware/auth");
 
 const router = express.Router();
-const mongoose = require("mongoose");
 
-// POST /api/books - Add a book to the logged-in user's bookshelf
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeText(value) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+// POST /api/books - Add a book to the logged-in user's bookshelf.
+// Duplicate saves return the existing book instead of creating another.
 router.post("/", protect, async (req, res) => {
   try {
     const {
-  title,
-  author,
-  genre,
-  status,
-  description,
-  coverUrl,
-  openLibraryKey,
-} = req.body;
+      title,
+      author,
+      genre,
+      status,
+      description,
+      coverUrl,
+      openLibraryKey,
+    } = req.body;
 
     if (
       typeof title !== "string" ||
@@ -30,36 +39,104 @@ router.post("/", protect, async (req, res) => {
       });
     }
 
+    const cleanTitle = title.trim();
+    const cleanAuthor = author.trim();
+    const cleanKey =
+      typeof openLibraryKey === "string"
+        ? openLibraryKey.trim()
+        : "";
+
+    // Use the catalog identifier when available. Also compare normalized
+    // title + author so books entered manually can be detected as duplicates.
+    const duplicateConditions = [];
+
+    if (cleanKey) {
+      duplicateConditions.push({
+        openLibraryKey: cleanKey,
+      });
+    }
+
+    duplicateConditions.push({
+      title: {
+        $regex: `^${escapeRegex(cleanTitle)}$`,
+        $options: "i",
+      },
+      author: {
+        $regex: `^${escapeRegex(cleanAuthor)}$`,
+        $options: "i",
+      },
+    });
+
+    let existingBook = await Book.findOne({
+      owner: req.user._id,
+      $or: duplicateConditions,
+    });
+
+    if (existingBook) {
+      let changed = false;
+
+      // Older saved records may not have had cover information.
+      if (
+        !existingBook.coverUrl &&
+        typeof coverUrl === "string" &&
+        coverUrl.trim()
+      ) {
+        existingBook.coverUrl = coverUrl.trim();
+        changed = true;
+      }
+
+      if (!existingBook.openLibraryKey && cleanKey) {
+        existingBook.openLibraryKey = cleanKey;
+        changed = true;
+      }
+
+      if (changed) {
+        await existingBook.save();
+      }
+
+      return res.status(200).json({
+        message: "This book is already on your bookshelf",
+        book: existingBook,
+        alreadySaved: true,
+      });
+    }
+
     const book = await Book.create({
       owner: req.user._id,
-      title: title.trim(),
-      author: author.trim(),
+      title: cleanTitle,
+      author: cleanAuthor,
       genre,
       status,
       description,
-      coverUrl,
-      openLibraryKey,
+      coverUrl:
+        typeof coverUrl === "string" ? coverUrl.trim() : "",
+      openLibraryKey: cleanKey,
     });
 
     return res.status(201).json({
       message: "Book added successfully",
       book,
+      alreadySaved: false,
     });
   } catch (error) {
-    if (error.name === "ValidationError" || error.name === "CastError") {
+    if (
+      error.name === "ValidationError" ||
+      error.name === "CastError"
+    ) {
       return res.status(400).json({
         message: "Invalid book information",
       });
     }
 
     console.error("Add book error:", error);
+
     return res.status(500).json({
       message: "Failed to add book",
     });
   }
 });
 
- // GET /api/books - Get books belonging to the logged-in user
+// GET /api/books - Get books belonging to the logged-in user.
 router.get("/", protect, async (req, res) => {
   try {
     const books = await Book.find({
@@ -80,12 +157,12 @@ router.get("/", protect, async (req, res) => {
   }
 });
 
-// PATCH /api/books/:id - Update a book owned by the logged-in user
+// PATCH /api/books/:id - Update a book owned by the logged-in user.
 router.patch("/:id", protect, async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!require("mongoose").isValidObjectId(id)) {
+    if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({
         message: "Invalid book ID",
       });
@@ -136,7 +213,10 @@ router.patch("/:id", protect, async (req, res) => {
       book,
     });
   } catch (error) {
-    if (error.name === "ValidationError" || error.name === "CastError") {
+    if (
+      error.name === "ValidationError" ||
+      error.name === "CastError"
+    ) {
       return res.status(400).json({
         message: "Invalid book information",
       });
@@ -150,7 +230,7 @@ router.patch("/:id", protect, async (req, res) => {
   }
 });
 
-// DELETE /api/books/:id - Delete a book owned by the logged-in user
+// DELETE /api/books/:id - Delete a book owned by the logged-in user.
 router.delete("/:id", protect, async (req, res) => {
   try {
     const { id } = req.params;

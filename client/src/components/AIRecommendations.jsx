@@ -99,8 +99,10 @@ export default function AIRecommendations({ onBookAdded }) {
       onBookAdded?.(data.book);
 
       setMessage(
-        `"${book.title}" added to your bookshelf!`
-      );
+  data.alreadySaved
+    ? `"${book.title}" is already on your bookshelf.`
+    : `"${book.title}" added to your bookshelf!`
+);
     } catch (err) {
       setError(
         err.message || "Could not add this book."
