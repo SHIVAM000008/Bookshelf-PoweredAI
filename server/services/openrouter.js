@@ -85,14 +85,7 @@ async function generateAIResponse(messages, options = {}) {
   messages,
   temperature: 0.4,
   stream: false,
-
-  // Ask compatible models to avoid unnecessary reasoning.
-  reasoning: {
-    effort: "none",
-  },
-
-  // No max_tokens property.
-  // The provider determines the output-token allowance.
+  reasoning: { effort: "none" },
 }),
 
     // Abort if OpenRouter takes longer than 30 seconds.

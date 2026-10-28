@@ -1,7 +1,9 @@
 
 const express = require("express");
+const crypto = require("node:crypto");
 const { protect } = require("../middleware/auth");
 const { generateAIResponse } = require("../services/openrouter");
+
 
 const router = express.Router();
 
