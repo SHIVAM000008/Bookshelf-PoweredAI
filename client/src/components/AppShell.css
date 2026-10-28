@@ -1403,3 +1403,10 @@
     transition: none;
   }
 }
+.bs-page-description {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0.35rem 0 0;
+  font-weight: 400;
+}
