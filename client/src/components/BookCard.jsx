@@ -1,7 +1,5 @@
 
 import { useState } from "react";
-import { apiRequest } from "../lib/api";
-
 import { apiRequest, API_ORIGIN } from "../lib/api";
 import "./BookCard.css";
 
