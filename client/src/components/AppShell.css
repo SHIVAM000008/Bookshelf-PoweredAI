@@ -1221,3 +1221,185 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+/* =========================================================
+   SIDEBAR COLLAPSE + RESPONSIVE WORKSPACE POLISH
+========================================================= */
+
+.bs-topbar-left {
+  min-width: 0;
+}
+
+.bs-sidebar-toggle {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 17px;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.bs-sidebar-toggle:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-hover);
+}
+
+.bs-sidebar-toggle:active {
+  transform: scale(0.97);
+}
+
+/* The desktop sidebar disappears and the workspace gains its space. */
+.bs-app.sidebar-collapsed .bs-sidebar {
+  display: none;
+}
+
+.bs-app.sidebar-collapsed .bs-main {
+  margin-left: 0;
+}
+
+.bs-nav-text {
+  min-width: 0;
+}
+
+/* Remove old AI-card spacing; retain the account area at the bottom. */
+.bs-sidebar-bottom {
+  padding-top: 20px;
+}
+
+.bs-user {
+  margin-top: 0;
+}
+
+/* Ensure the content and persistent assistant can shrink safely. */
+.bs-workspace,
+.bs-content-column,
+.bs-research-column,
+.bs-feature-content {
+  min-width: 0;
+}
+
+.bs-workspace {
+  width: 100%;
+}
+
+.bs-app :is(input, select, textarea) {
+  width: 100%;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.bs-app :is(input, select, textarea):focus {
+  border-color: var(--focus-ring);
+}
+
+.bs-app :is(input, textarea)::placeholder {
+  color: var(--text-muted);
+  opacity: 0.88;
+}
+
+.bs-app textarea {
+  min-height: 82px;
+}
+
+.bs-app :is(button, input, select, textarea) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bs-app button {
+  touch-action: manipulation;
+}
+
+/* Medium desktop */
+@media (max-width: 1250px) {
+  .bs-sidebar {
+    width: 215px;
+  }
+
+  .bs-main {
+    margin-left: 215px;
+  }
+
+  .bs-app.sidebar-collapsed .bs-main {
+    margin-left: 0;
+  }
+}
+
+/* Tablet: the assistant stacks below the main page. */
+@media (max-width: 980px) {
+  .bs-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bs-research-column {
+    width: 100%;
+  }
+}
+
+/* Mobile uses the drawer toggle rather than the desktop collapse control. */
+@media (max-width: 680px) {
+  .bs-sidebar-toggle {
+    display: none;
+  }
+
+  .bs-sidebar {
+    display: flex !important;
+  }
+
+  .bs-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .bs-app.sidebar-collapsed .bs-sidebar:not(.is-open) {
+    transform: translateX(-105%);
+  }
+
+  .bs-main,
+  .bs-app.sidebar-collapsed .bs-main {
+    margin-left: 0;
+  }
+
+  .bs-topbar {
+    gap: 8px;
+  }
+
+  .bs-topbar-left {
+    flex: 1;
+  }
+
+  .bs-topbar-actions {
+    flex-shrink: 0;
+  }
+
+  .bs-workspace {
+    padding: 12px;
+  }
+
+  .bs-research-column {
+    min-height: 0;
+    height: 680px;
+  }
+
+  .bs-footer {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bs-sidebar-toggle {
+    transition: none;
+  }
+}

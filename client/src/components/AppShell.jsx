@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import "./AppShell.css";
 
@@ -18,6 +19,14 @@ function readSavedTheme() {
   }
 }
 
+function readSavedSidebarState() {
+  try {
+    return localStorage.getItem("bookshelf-sidebar-collapsed") === "true";
+  } catch {
+    return false;
+  }
+}
+
 export default function AppShell({
   user,
   onLogout,
@@ -30,6 +39,9 @@ export default function AppShell({
   const [theme, setTheme] = useState(readSavedTheme);
   const [activePage, setActivePage] = useState("overview");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    readSavedSidebarState
+  );
   const [recommendationMode, setRecommendationMode] =
     useState("content");
 
@@ -39,9 +51,33 @@ export default function AppShell({
     try {
       localStorage.setItem("bookshelf-theme", theme);
     } catch {
-      // The selected theme still works for this session.
+      // Theme remains active for this session.
     }
   }, [theme]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "bookshelf-sidebar-collapsed",
+        String(sidebarCollapsed)
+      );
+    } catch {
+      // Sidebar preference remains active for this session.
+    }
+  }, [sidebarCollapsed]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        setMobileMenuOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen]);
 
   function navigateTo(page) {
     setActivePage(page);
@@ -74,12 +110,15 @@ export default function AppShell({
   );
 
   return (
-    <div className="bs-app">
+    <div
+      className={`bs-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}
+    >
       <button
         className="bs-mobile-menu"
         type="button"
         onClick={() => setMobileMenuOpen((open) => !open)}
         aria-expanded={mobileMenuOpen}
+        aria-controls="bs-sidebar"
         aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
       >
         {mobileMenuOpen ? "✕" : "☰"}
@@ -94,7 +133,11 @@ export default function AppShell({
         />
       )}
 
-      <aside className={`bs-sidebar ${mobileMenuOpen ? "is-open" : ""}`}>
+      <aside
+        id="bs-sidebar"
+        className={`bs-sidebar${mobileMenuOpen ? " is-open" : ""}`}
+        aria-label="Sidebar navigation"
+      >
         <button
           className="bs-brand"
           type="button"
@@ -121,35 +164,18 @@ export default function AppShell({
               }`}
               onClick={() => navigateTo(item.id)}
               aria-current={activePage === item.id ? "page" : undefined}
+              title={sidebarCollapsed ? item.label : undefined}
             >
               <span className="bs-nav-icon" aria-hidden="true">
                 {item.icon}
               </span>
-
-              <span>{item.label}</span>
+              <span className="bs-nav-text">{item.label}</span>
             </button>
           ))}
         </nav>
 
         <div className="bs-sidebar-bottom">
-          <div className="bs-ai-note">
-            <span className="bs-ai-note-icon" aria-hidden="true">
-              ✧
-            </span>
-
-            <strong>Your reading companion</strong>
-
-            <p>Ask questions, explore books, and develop research ideas.</p>
-
-            <button
-              type="button"
-              className="bs-ai-note-link"
-              onClick={focusAssistant}
-            >
-              Ask the AI Assistant <span aria-hidden="true">→</span>
-            </button>
-          </div>
-
+          {/* The duplicate AI promo card is intentionally removed. */}
           <div className="bs-user">
             <div className="bs-avatar" aria-hidden="true">
               {displayName.charAt(0).toUpperCase()}
@@ -177,10 +203,31 @@ export default function AppShell({
 
       <main className="bs-main">
         <header className="bs-topbar">
-          <div className="bs-breadcrumb" aria-live="polite">
-            <span>Bookshelf</span>
-            <span aria-hidden="true">/</span>
-            <strong>{activeNavigationItem?.label || "Overview"}</strong>
+          <div className="bs-topbar-left">
+            <button
+              className="bs-sidebar-toggle"
+              type="button"
+              onClick={() => {
+                setSidebarCollapsed((collapsed) => !collapsed);
+                setMobileMenuOpen(false);
+              }}
+              aria-expanded={!sidebarCollapsed}
+              aria-controls="bs-sidebar"
+              aria-label={
+                sidebarCollapsed ? "Show sidebar" : "Hide sidebar"
+              }
+              title={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+            >
+              <span aria-hidden="true">
+                {sidebarCollapsed ? "☰" : "◧"}
+              </span>
+            </button>
+
+            <div className="bs-breadcrumb" aria-live="polite">
+              <span>Bookshelf</span>
+              <span aria-hidden="true">/</span>
+              <strong>{activeNavigationItem?.label || "Overview"}</strong>
+            </div>
           </div>
 
           <div className="bs-topbar-actions">
@@ -207,7 +254,6 @@ export default function AppShell({
               <span aria-hidden="true">
                 {theme === "dark" ? "☼" : "☾"}
               </span>
-
               <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
             </button>
           </div>
@@ -267,21 +313,16 @@ export default function AppShell({
                 <div className="bs-welcome-art" aria-hidden="true">
                   <span className="bs-art-orbit bs-art-orbit-one" />
                   <span className="bs-art-orbit bs-art-orbit-two" />
-
                   <div className="bs-art-book bs-art-book-back" />
-
                   <div className="bs-art-book bs-art-book-front">
                     <span>THE</span>
-
                     <strong>
                       READING
                       <br />
                       ROOM
                     </strong>
-
                     <i />
                   </div>
-
                   <span className="bs-art-star">✦</span>
                 </div>
               </section>
@@ -400,7 +441,6 @@ export default function AppShell({
                 <span className="bs-eyebrow">YOUR READING COMPANION</span>
                 <h2>AI Assistant</h2>
               </div>
-
               <span className="bs-ai-badge" aria-label="AI">
                 ✧
               </span>
