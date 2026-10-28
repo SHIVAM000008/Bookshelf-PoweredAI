@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { apiRequest } from "../lib/api";
 import "./ResearchAssistant.css";
@@ -54,6 +53,7 @@ export default function ResearchAssistant() {
 
     try {
       const data = await apiRequest(`/research/chats/${chatId}`);
+
       setActiveChat(data.chat);
       setMessages(data.chat.messages || []);
     } catch (err) {
@@ -73,22 +73,25 @@ export default function ResearchAssistant() {
     setError("");
     setSending(true);
 
-    try {
-      let chat = activeChat;
+    // Keep the original conversation ID for conflict recovery.
+    let chatId = activeChat?._id;
 
-      if (!chat) {
+    try {
+      if (!chatId) {
         const created = await apiRequest("/research/chats", {
           method: "POST",
           body: JSON.stringify({}),
         });
 
-        chat = created.chat;
+        const chat = created.chat;
+        chatId = chat._id;
+
         setActiveChat(chat);
         setChats((previous) => [chat, ...previous]);
       }
 
       const data = await apiRequest(
-        `/research/chats/${chat._id}/messages`,
+        `/research/chats/${chatId}/messages`,
         {
           method: "POST",
           body: JSON.stringify({ content }),
@@ -102,11 +105,34 @@ export default function ResearchAssistant() {
 
       setPrompt("");
 
-      // Refresh titles and activity timestamps.
+      // Refresh conversation titles and activity timestamps.
       const refreshed = await apiRequest("/research/chats");
       setChats(refreshed.chats || []);
     } catch (err) {
-      setError(err.message || "Could not send your message.");
+      if (err.status === 409 && chatId) {
+        // Another request changed this conversation.
+        try {
+          const latest = await apiRequest(
+            `/research/chats/${chatId}`
+          );
+
+          setActiveChat(latest.chat);
+          setMessages(latest.chat.messages || []);
+
+          setError(
+            "This conversation changed while you were waiting. " +
+              "The latest messages have been loaded. Please send " +
+              "your question again if it wasn't answered."
+          );
+        } catch {
+          setError(
+            "This conversation changed, but its latest messages " +
+              "could not be loaded. Please reopen the conversation."
+          );
+        }
+      } else {
+        setError(err.message || "Could not send your message.");
+      }
     } finally {
       setSending(false);
     }

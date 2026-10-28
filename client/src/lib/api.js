@@ -1,4 +1,3 @@
-
 const API_URL = "http://localhost:5000/api";
 
 export async function apiRequest(path, options = {}) {
@@ -17,10 +16,22 @@ export async function apiRequest(path, options = {}) {
     headers,
   });
 
-  const data = await response.json();
+  let data;
+
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || "Something went wrong");
+    const error = new Error(
+      data.message || "Something went wrong"
+    );
+
+    error.status = response.status;
+
+    throw error;
   }
 
   return data;
