@@ -1,83 +1,51 @@
-
 import { useEffect, useState } from "react";
-
-// API helper for communicating with our Express backend.
-// It automatically includes authentication cookies.
 import { apiRequest } from "./lib/api";
-
-// Application styles.
 import "./App.css";
 
-// Main dashboard components.
 import Bookshelf from "./components/Bookshelf";
 import DiscoverBooks from "./components/DiscoverBooks";
 import Recommendations from "./components/Recommendations";
 import AIRecommendations from "./components/AIRecommendations";
 import ResearchAssistant from "./components/ResearchAssistant";
 
+const navigationItems = [
+  { id: "overview", label: "Overview", icon: "⌂" },
+  { id: "bookshelf", label: "My Bookshelf", icon: "▤" },
+  { id: "discover", label: "Discover Books", icon: "⌕" },
+  { id: "recommendations", label: "For You", icon: "✳" },
+  { id: "research", label: "AI Research", icon: "✧" },
+];
+
 function App() {
-  // ============================================================
-  // 1. AUTHENTICATION STATE
-  // ============================================================
-
-  // Stores the currently logged-in user.
-  // null means no authenticated user is available.
   const [user, setUser] = useState(null);
-
-  // Controls whether the authentication form shows
-  // "login" or "register".
   const [mode, setMode] = useState("login");
+  const [theme, setTheme] = useState(
+  () => localStorage.getItem("bookshelf-theme") || "light"
+);
 
-  // Shared form state for login and registration.
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
   });
 
-  // Prevents duplicate requests and displays loading states.
   const [loading, setLoading] = useState(true);
-
-  // Displays authentication-related errors.
   const [error, setError] = useState("");
-
-  // ============================================================
-  // 2. BOOKSHELF REFRESH STATE
-  // ============================================================
-
-  // This value changes whenever a book is added from
-  // Discover Books or Recommendations.
-  //
-  // Changing the key on <Bookshelf /> causes React to remount
-  // the component, which reloads books from our backend.
-  //
-  // This is a simple MVP solution. Later, we can replace it
-  // with a shared data hook to preserve filters and search.
   const [bookshelfVersion, setBookshelfVersion] = useState(0);
 
-  // Shared callback passed to components that can save books.
+  const [activeSection, setActiveSection] = useState("overview");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   function handleBookAdded() {
     setBookshelfVersion((version) => version + 1);
   }
 
-  // ============================================================
-  // 3. RESTORE EXISTING LOGIN SESSION
-  // ============================================================
-
-  // Runs once when the application first loads.
-  //
-  // The browser sends the HttpOnly authentication cookie.
-  // Our backend validates the cookie and returns the user.
-  //
-  // This keeps users logged in after refreshing the page,
-  // as long as their session is still valid.
   useEffect(() => {
     async function checkSession() {
       try {
         const data = await apiRequest("/auth/me");
         setUser(data.user);
       } catch {
-        // Missing or expired session: show login form.
         setUser(null);
       } finally {
         setLoading(false);
@@ -87,9 +55,43 @@ function App() {
     checkSession();
   }, []);
 
-  // ============================================================
-  // 4. HANDLE LOGIN AND REGISTRATION
-  // ============================================================
+  useEffect(() => {
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem("bookshelf-theme", theme);
+}, [theme]);
+
+  useEffect(() => {
+    if (!user) return undefined;
+
+    const sections = navigationItems
+      .map((item) => document.getElementById(item.id))
+      .filter(Boolean);
+
+    if (!sections.length) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleSections = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort(
+            (a, b) =>
+              b.intersectionRatio - a.intersectionRatio
+          );
+
+        if (visibleSections[0]) {
+          setActiveSection(visibleSections[0].target.id);
+        }
+      },
+      {
+        rootMargin: "-15% 0px -65% 0px",
+        threshold: [0, 0.1, 0.25, 0.5],
+      }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+
+    return () => observer.disconnect();
+  }, [user]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -98,12 +100,11 @@ function App() {
     setLoading(true);
 
     try {
-      // Use the correct endpoint for the selected form.
       const endpoint =
-        mode === "register" ? "/auth/register" : "/auth/login";
+        mode === "register"
+          ? "/auth/register"
+          : "/auth/login";
 
-      // Registration needs name, email, and password.
-      // Login needs only email and password.
       const payload =
         mode === "register"
           ? form
@@ -112,49 +113,40 @@ function App() {
               password: form.password,
             };
 
-      // Send credentials to the backend.
       const data = await apiRequest(endpoint, {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
-      // Save the authenticated user in React state.
-      // This automatically switches to the dashboard.
       setUser(data.user);
 
-      // Clear sensitive form values after successful login.
       setForm({
         name: "",
         email: "",
         password: "",
       });
+
+      setActiveSection("overview");
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   }
-
-  // ============================================================
-  // 5. HANDLE LOGOUT
-  // ============================================================
 
   async function handleLogout() {
     setError("");
     setLoading(true);
 
     try {
-      // Backend clears the authentication cookie.
       await apiRequest("/auth/logout", {
         method: "POST",
       });
 
-      // Remove user from React state.
-      // The application returns to the login screen.
       setUser(null);
-
-      // Reset dashboard refresh state for the next session.
       setBookshelfVersion(0);
+      setActiveSection("overview");
+      setMobileMenuOpen(false);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -162,204 +154,569 @@ function App() {
     }
   }
 
-  // ============================================================
-  // 6. INITIAL LOADING SCREEN
-  // ============================================================
+  function navigateToSection(id) {
+    setActiveSection(id);
+    setMobileMenuOpen(false);
 
-  // Wait until the initial authentication check finishes.
-  // This prevents briefly displaying the login form
-  // to users who already have a valid session.
+    document.getElementById(id)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+
   if (loading && !user) {
     return (
-      <main className="auth-container">
-        Loading...
+      <main className="auth-loading">
+        <div className="loading-mark">B</div>
+        <p>Preparing your reading space...</p>
       </main>
     );
   }
-
-  // ============================================================
-  // 7. AUTHENTICATED USER DASHBOARD
-  // ============================================================
 
   if (user) {
     return (
-      <main className="dashboard-container">
-        <section className="dashboard-card">
-          {/* Dashboard heading */}
-          <h1>Bookshelf PoweredAI</h1>
-
-          <h2>Welcome, {user.name}!</h2>
-
-          <p>You are successfully logged in.</p>
-          <p>Email: {user.email}</p>
-
-          {/* ================================================
-              MY BOOKSHELF
-
-              Displays books saved in MongoDB.
-              Supports adding, editing, deleting,
-              searching, and filtering books.
-
-              The key changes when a catalog or
-              recommended book is successfully saved.
-          ================================================= */}
-          <Bookshelf key={bookshelfVersion} />
-
-          {/* ================================================
-              DISCOVER BOOKS
-
-              Searches the Open Library catalog.
-
-              After a successful save, this component
-              calls handleBookAdded() to refresh the shelf.
-          ================================================= */}
-          <DiscoverBooks
-            onBookAdded={handleBookAdded}
-          />
-
-          {/* ================================================
-              PERSONALIZED RECOMMENDATIONS
-
-              Loads recommendations from:
-              GET /api/recommendations
-
-              Recommendations are based on the user's
-              saved genres, reading status, and interests.
-
-              Users can save recommended books directly
-              to their personal bookshelf.
-          ================================================= */}
-          <Recommendations onBookAdded={handleBookAdded} />
-          <AIRecommendations onBookAdded={handleBookAdded} />
-          <ResearchAssistant />
-
-          {/* Authentication-related error messages */}
-          {error && (
-            <p role="alert" className="error">
-              {error}
-            </p>
-          )}
-
-          {/* Logout button */}
+      <div className="app-shell">
+        {mobileMenuOpen && (
           <button
             type="button"
-            onClick={handleLogout}
-            disabled={loading}
+            className="mobile-overlay"
+            aria-label="Close navigation menu"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
+
+        <aside
+          className={`app-sidebar ${
+            mobileMenuOpen ? "sidebar-open" : ""
+          }`}
+        >
+          <a
+            className="brand"
+            href="#overview"
+            onClick={() => {
+              setActiveSection("overview");
+              setMobileMenuOpen(false);
+            }}
           >
-            {loading ? "Please wait..." : "Log out"}
-          </button>
-        </section>
-      </main>
+            <span className="brand-mark">B</span>
+
+            <span className="brand-copy">
+              <strong>Bookshelf</strong>
+              <span>POWERED AI</span>
+            </span>
+          </a>
+
+          <div className="sidebar-caption">
+            YOUR READING SPACE
+          </div>
+
+          <nav
+            className="primary-navigation"
+            aria-label="Main navigation"
+          >
+            {navigationItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`nav-item ${
+                  activeSection === item.id
+                    ? "nav-item-active"
+                    : ""
+                }`}
+                onClick={() => navigateToSection(item.id)}
+              >
+                <span
+                  className="nav-icon"
+                  aria-hidden="true"
+                >
+                  {item.icon}
+                </span>
+
+                <span>{item.label}</span>
+
+                {activeSection === item.id && (
+                  <span className="nav-active-dot" />
+                )}
+              </button>
+            ))}
+          </nav>
+
+          <div className="sidebar-bottom">
+            <div className="sidebar-note">
+              <span className="sidebar-note-icon">✦</span>
+
+              <p>
+                <strong>Read with intention.</strong>
+                <span>
+                  Discover your next meaningful read.
+                </span>
+              </p>
+            </div>
+
+            <div className="sidebar-user">
+              <div className="user-avatar">
+                {user.name?.trim()?.charAt(0)?.toUpperCase() ||
+                  "R"}
+              </div>
+
+              <div className="user-details">
+                <strong>{user.name}</strong>
+                <span>Reader account</span>
+              </div>
+
+              <button
+                type="button"
+                className="logout-button"
+                onClick={handleLogout}
+                disabled={loading}
+                aria-label="Log out"
+                title="Log out"
+              >
+                ↗
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <div className="app-main">
+          <header className="topbar">
+            <button
+              type="button"
+              className="mobile-menu-button"
+              aria-label="Open navigation menu"
+              aria-expanded={mobileMenuOpen}
+              onClick={() =>
+                setMobileMenuOpen((open) => !open)
+              }
+            >
+              ☰
+            </button>
+
+            <div className="topbar-context">
+              <span className="topbar-eyebrow">
+                YOUR PERSONAL LIBRARY
+              </span>
+              <span className="topbar-title">
+                A space to explore ideas.
+              </span>
+            </div>
+            <button
+  type="button"
+  className="theme-toggle"
+  onClick={() =>
+    setTheme((current) =>
+      current === "light" ? "dark" : "light"
+    )
+  }
+  aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+  aria-pressed={theme === "dark"}
+  title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+>
+  <span aria-hidden="true">
+    {theme === "light" ? "☾" : "☀"}
+  </span>
+  <span className="theme-toggle-label">
+    {theme === "light" ? "Dark mode" : "Light mode"}
+  </span>
+</button>
+
+            <button
+              type="button"
+              className="topbar-account"
+              onClick={() => navigateToSection("overview")}
+              title="Return to overview"
+            >
+              <span className="account-avatar">
+                {user.name?.trim()?.charAt(0)?.toUpperCase() ||
+                  "R"}
+              </span>
+              <span className="account-name">
+                {user.name}
+              </span>
+              <span className="account-chevron">⌄</span>
+            </button>
+          </header>
+
+          <main className="workspace">
+            <section
+              id="overview"
+              className="welcome-panel page-section"
+            >
+              <div className="welcome-copy">
+                <span className="eyebrow">
+                  YOUR NEXT CHAPTER STARTS HERE
+                </span>
+
+                <h1>
+                  Welcome back,
+                  <br />
+                  <span>{user.name}.</span>
+                </h1>
+
+                <p>
+                  Your books, new discoveries, and fresh
+                  perspectives—all in one place.
+                </p>
+
+                <button
+                  type="button"
+                  className="primary-action"
+                  onClick={() =>
+                    navigateToSection("discover")
+                  }
+                >
+                  Discover your next read
+                  <span aria-hidden="true">→</span>
+                </button>
+              </div>
+
+              <div
+                className="welcome-art"
+                aria-hidden="true"
+              >
+                <div className="art-orbit art-orbit-one" />
+                <div className="art-orbit art-orbit-two" />
+
+                <div className="art-book art-book-back">
+                  <span>THE ART OF</span>
+                  <strong>THINKING</strong>
+                  <span>DEEPLY</span>
+                </div>
+
+                <div className="art-book art-book-front">
+                  <span>VOL. 01</span>
+                  <strong>
+                    A WORLD
+                    <br />
+                    OF IDEAS
+                  </strong>
+                  <span>READ · REFLECT · GROW</span>
+                </div>
+
+                <span className="art-spark art-spark-one">
+                  ✳
+                </span>
+                <span className="art-spark art-spark-two">
+                  ✦
+                </span>
+              </div>
+            </section>
+
+            <section className="quick-links" aria-label="Quick actions">
+              <button
+                type="button"
+                className="quick-link"
+                onClick={() =>
+                  navigateToSection("bookshelf")
+                }
+              >
+                <span className="quick-link-icon">▤</span>
+                <span>
+                  <strong>Your collection</strong>
+                  <small>Return to your bookshelf</small>
+                </span>
+                <span className="quick-link-arrow">→</span>
+              </button>
+
+              <button
+                type="button"
+                className="quick-link"
+                onClick={() =>
+                  navigateToSection("recommendations")
+                }
+              >
+                <span className="quick-link-icon">✳</span>
+                <span>
+                  <strong>Made for you</strong>
+                  <small>Explore recommendations</small>
+                </span>
+                <span className="quick-link-arrow">→</span>
+              </button>
+
+              <button
+                type="button"
+                className="quick-link"
+                onClick={() =>
+                  navigateToSection("research")
+                }
+              >
+                <span className="quick-link-icon">✧</span>
+                <span>
+                  <strong>Explore an idea</strong>
+                  <small>Talk with your AI researcher</small>
+                </span>
+                <span className="quick-link-arrow">→</span>
+              </button>
+            </section>
+
+            <section
+              id="bookshelf"
+              className="content-section page-section"
+            >
+              <div className="section-heading">
+                <div>
+                  <span className="eyebrow">
+                    YOUR PERSONAL COLLECTION
+                  </span>
+                  <h2>My Bookshelf</h2>
+                  <p>
+                    The stories and ideas you're keeping close.
+                  </p>
+                </div>
+
+                <span className="section-number">01</span>
+              </div>
+
+              <Bookshelf key={bookshelfVersion} />
+            </section>
+
+            <section
+              id="discover"
+              className="content-section page-section"
+            >
+              <div className="section-heading">
+                <div>
+                  <span className="eyebrow">
+                    FOLLOW YOUR CURIOSITY
+                  </span>
+                  <h2>Discover Books</h2>
+                  <p>
+                    Find a new perspective, one book at a time.
+                  </p>
+                </div>
+
+                <span className="section-number">02</span>
+              </div>
+
+              <DiscoverBooks onBookAdded={handleBookAdded} />
+            </section>
+
+            <section
+              id="recommendations"
+              className="content-section page-section"
+            >
+              <div className="section-heading">
+                <div>
+                  <span className="eyebrow">
+                    SELECTED FOR YOUR JOURNEY
+                  </span>
+                  <h2>Recommended for You</h2>
+                  <p>
+                    Ideas worth exploring, chosen around your
+                    reading interests.
+                  </p>
+                </div>
+
+                <span className="section-number">03</span>
+              </div>
+
+              <Recommendations
+                onBookAdded={handleBookAdded}
+              />
+
+              <div className="ai-recommendations-panel">
+                <AIRecommendations
+                  onBookAdded={handleBookAdded}
+                />
+              </div>
+            </section>
+
+            <section
+              id="research"
+              className="research-section page-section"
+            >
+              <div className="research-intro">
+                <span className="eyebrow">
+                  YOUR THINKING PARTNER
+                </span>
+
+                <h2>
+                  Great questions lead
+                  <br />
+                  to <span>new discoveries.</span>
+                </h2>
+
+                <p>
+                  Explore a topic, develop an idea, or follow
+                  your curiosity with your AI Research Assistant.
+                </p>
+              </div>
+
+              <div className="research-workspace">
+                <ResearchAssistant />
+              </div>
+            </section>
+
+            {error && (
+              <p role="alert" className="global-error">
+                {error}
+              </p>
+            )}
+
+            <footer className="app-footer">
+              <a
+                className="footer-brand"
+                href="#overview"
+                onClick={() => setActiveSection("overview")}
+              >
+                Bookshelf <span>PoweredAI</span>
+              </a>
+
+              <p>
+                Made for curious minds and lifelong readers.
+              </p>
+
+              <button
+                type="button"
+                className="footer-logout"
+                onClick={handleLogout}
+                disabled={loading}
+              >
+                {loading ? "Please wait..." : "Log out"}
+              </button>
+            </footer>
+          </main>
+        </div>
+      </div>
     );
   }
 
-  // ============================================================
-  // 8. LOGIN AND REGISTRATION SCREEN
-  // ============================================================
-
-  // Rendered only when the user is not authenticated.
   return (
     <main className="auth-container">
       <section className="auth-card">
-        <h1>Bookshelf PoweredAI</h1>
+        <a className="auth-brand" href="#login">
+          <span className="brand-mark">B</span>
 
-        <h2>
-          {mode === "login"
-            ? "Welcome back"
-            : "Create account"}
-        </h2>
+          <span className="brand-copy">
+            <strong>Bookshelf</strong>
+            <span>POWERED AI</span>
+          </span>
+        </a>
+
+        <div className="auth-heading">
+          <span className="eyebrow">
+            YOUR PERSONAL READING SPACE
+          </span>
+
+          <h1>
+            {mode === "login"
+              ? "Welcome back."
+              : "Begin a new chapter."}
+          </h1>
+
+          <p>
+            {mode === "login"
+              ? "Pick up where your curiosity left off."
+              : "Create your account and build a library of your own."}
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Name is required only during registration. */}
           {mode === "register" && (
             <label>
-              Name
+              Your name
               <input
                 type="text"
                 value={form.name}
-                onChange={(e) =>
+                onChange={(event) =>
                   setForm({
                     ...form,
-                    name: e.target.value,
+                    name: event.target.value,
                   })
                 }
+                autoComplete="name"
                 required
                 maxLength={80}
+                placeholder="How should we call you?"
               />
             </label>
           )}
 
-          {/* Email is required for both forms. */}
           <label>
-            Email
+            Email address
             <input
               type="email"
               value={form.email}
-              onChange={(e) =>
+              onChange={(event) =>
                 setForm({
                   ...form,
-                  email: e.target.value,
+                  email: event.target.value,
                 })
               }
+              autoComplete="email"
               required
+              placeholder="you@example.com"
             />
           </label>
 
-          {/* Password is required for both forms. */}
           <label>
             Password
             <input
               type="password"
               value={form.password}
-              onChange={(e) =>
+              onChange={(event) =>
                 setForm({
                   ...form,
-                  password: e.target.value,
+                  password: event.target.value,
                 })
+              }
+              autoComplete={
+                mode === "register"
+                  ? "new-password"
+                  : "current-password"
               }
               required
               minLength={
                 mode === "register" ? 12 : undefined
               }
+              placeholder="Enter your password"
             />
           </label>
 
-          {/* Display login or registration errors. */}
           {error && (
             <p role="alert" className="error">
               {error}
             </p>
           )}
 
-          {/* Submit authentication form. */}
-          <button type="submit" disabled={loading}>
+          <button
+            type="submit"
+            className="auth-submit"
+            disabled={loading}
+          >
             {loading
               ? "Please wait..."
               : mode === "login"
-                ? "Log in"
-                : "Register"}
+                ? "Enter your library"
+                : "Create your account"}
+            {!loading && <span aria-hidden="true">→</span>}
           </button>
         </form>
 
-        {/* Switch between login and registration. */}
-        <p>
+        <p className="auth-switch">
           {mode === "login"
-            ? "Don't have an account?"
+            ? "New to Bookshelf PoweredAI?"
             : "Already have an account?"}
-          {" "}
+
           <button
             type="button"
             className="text-button"
             onClick={() => {
-              setMode(
-                mode === "login" ? "register" : "login"
+              setMode((current) =>
+                current === "login" ? "register" : "login"
               );
               setError("");
             }}
           >
-            {mode === "login" ? "Register" : "Log in"}
+            {mode === "login" ? "Create an account" : "Log in"}
           </button>
         </p>
+
+        <div className="auth-decoration">
+          <span>READ</span>
+          <span>REFLECT</span>
+          <span>DISCOVER</span>
+        </div>
       </section>
     </main>
   );

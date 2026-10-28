@@ -1,8 +1,146 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap");
+
+:root {
+  font-family: "DM Sans", Arial, sans-serif;
+  color: #242824;
+  background: #f7f5f0;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --color-background: #f7f5f0;
+  --color-surface: #ffffff;
+  --color-primary: #234e3d;
+  --color-primary-dark: #18392d;
+  --color-primary-soft: #e8eee8;
+  --color-text: #242824;
+  --color-muted: #747970;
+  --color-border: #e7e5de;
+  --color-accent: #a9bca7;
+
+  --font-heading: "Playfair Display", Georgia, serif;
+  --font-body: "DM Sans", Arial, sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+
+  --shadow-soft: 0 10px 35px rgba(35, 55, 40, 0.06);
+}
+
 * {
   box-sizing: border-box;
 }
 
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+}
+
 body {
+  min-width: 320px;
+  min-height: 100vh;
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-body);
+}
+
+button,
+input,
+select,
+textarea {
+  font-size: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(35, 78, 61, 0.3);
+  outline-offset: 3px;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+::selection {
+  color: #ffffff;
+  background: #234e3d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* =========================================================
+   LIGHT THEME
+========================================================= */
+
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-background: #f7f5f0;
+  --color-surface: #ffffff;
+  --color-primary: #234e3d;
+  --color-primary-dark: #18392d;
+  --color-primary-soft: #e8eee8;
+  --color-text: #242824;
+  --color-muted: #747970;
+  --color-border: #e7e5de;
+  --color-accent: #a9bca7;
+
+  --shadow-soft: 0 10px 35px rgba(35, 55, 40, 0.06);
+}
+
+/* =========================================================
+   DARK THEME
+========================================================= */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-background: #141b18;
+  --color-surface: #1d2722;
+  --color-primary: #a8c8b0;
+  --color-primary-dark: #c1d9c6;
+  --color-primary-soft: #283b30;
+  --color-text: #edf1eb;
+  --color-muted: #a5b0a6;
+  --color-border: #354239;
+  --color-accent: #8fb59a;
+
+  --shadow-soft: 0 10px 35px rgba(0, 0, 0, 0.18);
+}
+
+:root[data-theme="dark"] body {
+  background: var(--color-background);
+  color: var(--color-text);
 }
