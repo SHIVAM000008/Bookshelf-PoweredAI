@@ -16,21 +16,12 @@ const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export default function BookForm({ onBookAdded }) {
   const [form, setForm] = useState(initialForm);
   const [coverFile, setCoverFile] = useState(null);
-  const [coverPreview, setCoverPreview] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!coverFile) {
-      setCoverPreview("");
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(coverFile);
-    setCoverPreview(objectUrl);
-
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [coverFile]);
+  const coverPreview = useMemo(
+  () => (coverFile ? URL.createObjectURL(coverFile) : ""),
+  [coverFile]
+);
 
   function handleChange(event) {
     const { name, value } = event.target;

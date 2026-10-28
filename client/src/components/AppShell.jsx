@@ -84,21 +84,6 @@ export default function AppShell({
     setMobileMenuOpen(false);
   }
 
-  function focusAssistant() {
-    setMobileMenuOpen(false);
-
-    document.getElementById("bs-research-panel")?.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
-      block: "nearest",
-    });
-
-    document.getElementById("research-prompt")?.focus({
-      preventScroll: true,
-    });
-  }
-
   const displayName =
     user?.name ||
     user?.username ||
