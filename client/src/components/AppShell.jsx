@@ -319,20 +319,19 @@ export default function AppShell({
                 aria-labelledby="bs-bookshelf-title"
               >
                 <div className="bs-section-heading">
-                  <div>
-                    <span className="bs-eyebrow">YOUR COLLECTION</span>
-                    <h1 id="bs-bookshelf-title">My Bookshelf</h1>
-                    <p>Your saved books and reading progress.</p>
-                  </div>
+  <div>
+    <h1 id="bs-bookshelf-title">My Bookshelf</h1>
+    <p>Your saved books and reading progress.</p>
+  </div>
 
-                  <button
-                    className="bs-text-button"
-                    type="button"
-                    onClick={() => navigateTo("discover")}
-                  >
-                    Find books <span aria-hidden="true">→</span>
-                  </button>
-                </div>
+  <button
+    className="bs-text-button"
+    type="button"
+    onClick={() => navigateTo("discover")}
+  >
+    Find books <span aria-hidden="true">→</span>
+  </button>
+</div>
 
                 <div className="bs-feature-content">{bookshelf}</div>
               </section>
@@ -344,12 +343,11 @@ export default function AppShell({
                 aria-labelledby="bs-discover-title"
               >
                 <div className="bs-section-heading">
-                  <div>
-                    <span className="bs-eyebrow">FIND SOMETHING NEW</span>
-                    <h1 id="bs-discover-title">Discover Books</h1>
-                    <p>Search the catalog for your next great read.</p>
-                  </div>
-                </div>
+  <div>
+    <h1 id="bs-discover-title">Discover Books</h1>
+    <p>Search the catalog for your next great read.</p>
+  </div>
+</div>
 
                 <div className="bs-feature-content">{discover}</div>
               </section>
@@ -361,16 +359,11 @@ export default function AppShell({
                 aria-labelledby="bs-recommendations-title"
               >
                 <div className="bs-section-heading">
-                  <div>
-                    <span className="bs-eyebrow">PICKED FOR YOU</span>
-                    <h1 id="bs-recommendations-title">
-                      Your Recommendations
-                    </h1>
-                    <p>
-                      Explore personalized picks and AI-generated book ideas.
-                    </p>
-                  </div>
-                </div>
+  <div>
+    <h1 id="bs-recommendations-title">Your Recommendations</h1>
+    <p>Explore personalized picks and AI-generated book ideas.</p>
+  </div>
+</div>
 
                 <div
                   className="bs-segmented"

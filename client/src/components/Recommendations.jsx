@@ -32,9 +32,7 @@ export default function Recommendations({ onBookAdded }) {
     setMessage("");
 
     try {
-      const data = await apiRequest("/recommendations", {
-        signal,
-      });
+      const data = await apiRequest("/recommendations", { signal });
 
       if (
         !mountedRef.current ||
@@ -69,8 +67,6 @@ export default function Recommendations({ onBookAdded }) {
 
   useEffect(() => {
     const controller = new AbortController();
-
-    // Initial loading is already true, so avoid resetting it on mount.
     const requestId = ++requestIdRef.current;
 
     async function fetchInitialRecommendations() {
@@ -112,9 +108,7 @@ export default function Recommendations({ onBookAdded }) {
 
     fetchInitialRecommendations();
 
-    return () => {
-      controller.abort();
-    };
+    return () => controller.abort();
   }, []);
 
   async function handleAddBook(book) {
@@ -161,22 +155,16 @@ export default function Recommendations({ onBookAdded }) {
   return (
     <section className="ai-recommendations">
       <div className="ai-recommendations-header">
-        <div>
-          <h2>Recommended for You</h2>
-          <p>
-            Discover books based on your reading interests
-            and bookshelf activity.
-          </p>
+        <div className="ai-recommendations-actions">
+          <button
+            type="button"
+            onClick={() => loadRecommendations()}
+            disabled={loading}
+            className="ai-generate-button"
+          >
+            {loading ? "Loading..." : "Refresh Recommendations"}
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={() => loadRecommendations()}
-          disabled={loading}
-          className="ai-generate-button"
-        >
-          {loading ? "Loading..." : "Refresh Recommendations"}
-        </button>
       </div>
 
       {basedOn.length > 0 && (

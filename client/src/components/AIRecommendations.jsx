@@ -4,28 +4,16 @@ import { apiRequest } from "../lib/api";
 import RecommendationBookCard from "./RecommendationBookCard";
 import "./AIRecommendations.css";
 
-/**
- * AI-powered recommendations.
- *
- * Uses:
- * POST /api/recommendations/ai
- *
- * AI generation occurs only when the user clicks
- * the Generate AI Picks button.
- */
 export default function AIRecommendations({ onBookAdded }) {
   const [recommendations, setRecommendations] = useState([]);
   const [basedOn, setBasedOn] = useState([]);
   const [model, setModel] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-
   const [addingKey, setAddingKey] = useState("");
   const [addedKeys, setAddedKeys] = useState([]);
 
-  // Request AI recommendations only when clicked.
   async function generateRecommendations() {
     if (loading) return;
 
@@ -38,36 +26,25 @@ export default function AIRecommendations({ onBookAdded }) {
         method: "POST",
       });
 
-      setRecommendations(
-        (data.recommendations || []).slice(0, 4)
-      );
-
+      setRecommendations((data.recommendations || []).slice(0, 4));
       setBasedOn(data.basedOn || []);
       setModel(data.model || "");
       setAddedKeys([]);
 
       if (!data.recommendations?.length) {
         setMessage(
-          data.message ||
-            "No AI recommendations available yet."
+          data.message || "No AI recommendations available yet."
         );
       }
     } catch (err) {
-      setError(
-        err.message ||
-          "Could not generate AI recommendations."
-      );
+      setError(err.message || "Could not generate AI recommendations.");
     } finally {
       setLoading(false);
     }
   }
 
-  // Save an AI-recommended book to the bookshelf.
   async function handleAddBook(book) {
-    if (
-      addingKey ||
-      addedKeys.includes(book.openLibraryKey)
-    ) {
+    if (addingKey || addedKeys.includes(book.openLibraryKey)) {
       return;
     }
 
@@ -89,24 +66,20 @@ export default function AIRecommendations({ onBookAdded }) {
         }),
       });
 
-      // Mark this book as successfully added.
       setAddedKeys((previous) => [
         ...previous,
         book.openLibraryKey,
       ]);
 
-      // Notify App.jsx to refresh the bookshelf.
       onBookAdded?.(data.book);
 
       setMessage(
-  data.alreadySaved
-    ? `"${book.title}" is already on your bookshelf.`
-    : `"${book.title}" added to your bookshelf!`
-);
-    } catch (err) {
-      setError(
-        err.message || "Could not add this book."
+        data.alreadySaved
+          ? `"${book.title}" is already on your bookshelf.`
+          : `"${book.title}" added to your bookshelf!`
       );
+    } catch (err) {
+      setError(err.message || "Could not add this book.");
     } finally {
       setAddingKey("");
     }
@@ -115,15 +88,6 @@ export default function AIRecommendations({ onBookAdded }) {
   return (
     <section className="ai-recommendations">
       <div className="ai-recommendations-header">
-        <div>
-          <h2>AI Picks for You</h2>
-
-          <p>
-            Discover books selected by AI based on your
-            reading history and interests.
-          </p>
-        </div>
-
         <button
           type="button"
           onClick={generateRecommendations}
@@ -156,27 +120,20 @@ export default function AIRecommendations({ onBookAdded }) {
         </p>
       )}
 
-      {basedOn.length > 0 &&
-        recommendations.length > 0 && (
-          <p className="ai-preferences">
-            <strong>Based on:</strong>{" "}
-            {basedOn.join(", ")}
-          </p>
-        )}
+      {basedOn.length > 0 && recommendations.length > 0 && (
+        <p className="ai-preferences">
+          <strong>Based on:</strong> {basedOn.join(", ")}
+        </p>
+      )}
 
-      {/* Shared recommendation cards */}
       <div className="ai-recommendations-grid">
         {recommendations.map((book) => (
           <RecommendationBookCard
             key={book.openLibraryKey}
             book={book}
             onAdd={handleAddBook}
-            isAdding={
-              addingKey === book.openLibraryKey
-            }
-            isAdded={addedKeys.includes(
-              book.openLibraryKey
-            )}
+            isAdding={addingKey === book.openLibraryKey}
+            isAdded={addedKeys.includes(book.openLibraryKey)}
             disabled={Boolean(addingKey)}
           />
         ))}
