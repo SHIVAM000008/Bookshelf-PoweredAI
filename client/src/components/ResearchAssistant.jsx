@@ -39,15 +39,22 @@ export default function ResearchAssistant() {
 
       const chat = data.chat;
 
-      setChats((previous) => [chat, ...previous]);
+      setChats((previous) => [
+        chat,
+        ...previous.filter((item) => item._id !== chat._id),
+      ]);
+
       setActiveChat(chat);
       setMessages([]);
+      setPrompt("");
     } catch (err) {
       setError(err.message || "Could not create a conversation.");
     }
   }
 
   async function openChat(chatId) {
+    if (activeChat?._id === chatId) return;
+
     setError("");
     setLoading(true);
 
@@ -73,7 +80,6 @@ export default function ResearchAssistant() {
     setError("");
     setSending(true);
 
-    // Keep the original conversation ID for conflict recovery.
     let chatId = activeChat?._id;
 
     try {
@@ -87,7 +93,10 @@ export default function ResearchAssistant() {
         chatId = chat._id;
 
         setActiveChat(chat);
-        setChats((previous) => [chat, ...previous]);
+        setChats((previous) => [
+          chat,
+          ...previous.filter((item) => item._id !== chat._id),
+        ]);
       }
 
       const data = await apiRequest(
@@ -98,23 +107,17 @@ export default function ResearchAssistant() {
         }
       );
 
-      setMessages((previous) => [
-        ...previous,
-        ...data.messages,
-      ]);
-
+      setMessages((previous) => [...previous, ...data.messages]);
       setPrompt("");
 
-      // Refresh conversation titles and activity timestamps.
+      // Refresh titles and activity timestamps without losing the
+      // currently open conversation.
       const refreshed = await apiRequest("/research/chats");
       setChats(refreshed.chats || []);
     } catch (err) {
       if (err.status === 409 && chatId) {
-        // Another request changed this conversation.
         try {
-          const latest = await apiRequest(
-            `/research/chats/${chatId}`
-          );
+          const latest = await apiRequest(`/research/chats/${chatId}`);
 
           setActiveChat(latest.chat);
           setMessages(latest.chat.messages || []);
@@ -139,6 +142,7 @@ export default function ResearchAssistant() {
   }
 
   async function deleteChat(chatId) {
+    // Preserve the existing confirmation before permanently deleting.
     const confirmed = window.confirm(
       "Delete this research conversation permanently?"
     );
@@ -159,6 +163,7 @@ export default function ResearchAssistant() {
       if (activeChat?._id === chatId) {
         setActiveChat(null);
         setMessages([]);
+        setPrompt("");
       }
     } catch (err) {
       setError(err.message || "Could not delete this conversation.");
@@ -166,18 +171,21 @@ export default function ResearchAssistant() {
   }
 
   return (
-    <section className="research-assistant">
+    <section className="research-assistant" aria-label="Research chat">
       <header className="research-header">
         <div>
           <h2>AI Research Assistant</h2>
           <p>
-            Explore books, analyze literary themes, and develop
-            research questions with AI.
+            Explore books, literary themes, and research questions with AI.
           </p>
         </div>
 
-        <button type="button" onClick={createChat}>
-          New conversation
+        <button
+          type="button"
+          onClick={createChat}
+          disabled={sending}
+        >
+          + New conversation
         </button>
       </header>
 
@@ -210,6 +218,10 @@ export default function ResearchAssistant() {
                 type="button"
                 className="research-chat-open"
                 onClick={() => openChat(chat._id)}
+                aria-current={
+                  activeChat?._id === chat._id ? "true" : undefined
+                }
+                title={chat.title || "New Research Chat"}
               >
                 {chat.title || "New Research Chat"}
               </button>
@@ -220,6 +232,7 @@ export default function ResearchAssistant() {
                 onClick={() => deleteChat(chat._id)}
                 aria-label={`Delete ${chat.title || "conversation"}`}
                 title="Delete conversation"
+                disabled={sending}
               >
                 Delete
               </button>
@@ -231,16 +244,21 @@ export default function ResearchAssistant() {
           <div className="research-messages" aria-live="polite">
             {!activeChat && (
               <div className="research-empty">
+                <span className="research-empty-icon" aria-hidden="true">
+                  ✧
+                </span>
                 <h3>What would you like to research?</h3>
                 <p>
-                  Ask about a novel, an author, literary themes,
-                  or ways to structure your research.
+                  Ask about a novel, an author, literary themes, or how to
+                  structure your research.
                 </p>
               </div>
             )}
 
             {activeChat && messages.length === 0 && (
-              <p>Send a message to begin this conversation.</p>
+              <p className="research-start-hint">
+                Send a message to begin this conversation.
+              </p>
             )}
 
             {messages.map((message, index) => (
@@ -257,7 +275,7 @@ export default function ResearchAssistant() {
 
             {sending && (
               <p className="research-thinking" role="status">
-                Researching your question...
+                Researching your question…
               </p>
             )}
           </div>
@@ -271,10 +289,11 @@ export default function ResearchAssistant() {
               id="research-prompt"
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
-              placeholder="e.g. How does symbolism develop the central themes of a novel?"
+              placeholder="Ask a question about a book or author…"
               rows={3}
               maxLength={4000}
               required
+              disabled={sending}
             />
 
             <div className="research-form-footer">
@@ -284,7 +303,7 @@ export default function ResearchAssistant() {
                 type="submit"
                 disabled={sending || !prompt.trim()}
               >
-                {sending ? "Thinking..." : "Send message"}
+                {sending ? "Thinking…" : "Send"}
               </button>
             </div>
           </form>

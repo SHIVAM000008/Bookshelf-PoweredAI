@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import "./AppShell.css";
 
@@ -6,8 +5,7 @@ const navigation = [
   { id: "overview", label: "Overview", icon: "⌂" },
   { id: "bookshelf", label: "My Bookshelf", icon: "▤" },
   { id: "discover", label: "Discover Books", icon: "⌕" },
-  { id: "recommendations", label: "For You", icon: "✧" },
-  { id: "research", label: "AI Research", icon: "◈" },
+  { id: "recommendations", label: "Recommendations", icon: "✧" },
 ];
 
 function readSavedTheme() {
@@ -30,7 +28,7 @@ export default function AppShell({
   researchAssistant,
 }) {
   const [theme, setTheme] = useState(readSavedTheme);
-  const [activeSection, setActiveSection] = useState("overview");
+  const [activePage, setActivePage] = useState("overview");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [recommendationMode, setRecommendationMode] =
     useState("content");
@@ -41,19 +39,27 @@ export default function AppShell({
     try {
       localStorage.setItem("bookshelf-theme", theme);
     } catch {
-      // Theme remains usable for the current session.
+      // The selected theme still works for this session.
     }
   }, [theme]);
 
-  function navigateTo(id) {
-    setActiveSection(id);
+  function navigateTo(page) {
+    setActivePage(page);
+    setMobileMenuOpen(false);
+  }
+
+  function focusAssistant() {
     setMobileMenuOpen(false);
 
-    document.getElementById(`section-${id}`)?.scrollIntoView({
+    document.getElementById("bs-research-panel")?.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? "auto"
         : "smooth",
-      block: "start",
+      block: "nearest",
+    });
+
+    document.getElementById("research-prompt")?.focus({
+      preventScroll: true,
     });
   }
 
@@ -62,6 +68,10 @@ export default function AppShell({
     user?.username ||
     user?.email?.split("@")[0] ||
     "Reader";
+
+  const activeNavigationItem = navigation.find(
+    (item) => item.id === activePage
+  );
 
   return (
     <div className="bs-app">
@@ -85,20 +95,19 @@ export default function AppShell({
       )}
 
       <aside className={`bs-sidebar ${mobileMenuOpen ? "is-open" : ""}`}>
-        <a
+        <button
           className="bs-brand"
-          href="#section-overview"
-          onClick={(event) => {
-            event.preventDefault();
-            navigateTo("overview");
-          }}
+          type="button"
+          onClick={() => navigateTo("overview")}
+          aria-label="Go to Bookshelf overview"
         >
           <span className="bs-brand-mark">B</span>
+
           <span className="bs-brand-copy">
             <strong>Bookshelf</strong>
             <small>POWERED AI</small>
           </span>
-        </a>
+        </button>
 
         <div className="bs-nav-label">WORKSPACE</div>
 
@@ -108,13 +117,15 @@ export default function AppShell({
               type="button"
               key={item.id}
               className={`bs-nav-item ${
-                activeSection === item.id ? "is-active" : ""
+                activePage === item.id ? "is-active" : ""
               }`}
               onClick={() => navigateTo(item.id)}
+              aria-current={activePage === item.id ? "page" : undefined}
             >
               <span className="bs-nav-icon" aria-hidden="true">
                 {item.icon}
               </span>
+
               <span>{item.label}</span>
             </button>
           ))}
@@ -122,15 +133,20 @@ export default function AppShell({
 
         <div className="bs-sidebar-bottom">
           <div className="bs-ai-note">
-            <span className="bs-ai-note-icon">✧</span>
+            <span className="bs-ai-note-icon" aria-hidden="true">
+              ✧
+            </span>
+
             <strong>Your reading companion</strong>
-            <p>Discover books and explore ideas with AI.</p>
+
+            <p>Ask questions, explore books, and develop research ideas.</p>
+
             <button
               type="button"
               className="bs-ai-note-link"
-              onClick={() => navigateTo("research")}
+              onClick={focusAssistant}
             >
-              Start researching <span aria-hidden="true">→</span>
+              Ask the AI Assistant <span aria-hidden="true">→</span>
             </button>
           </div>
 
@@ -161,13 +177,10 @@ export default function AppShell({
 
       <main className="bs-main">
         <header className="bs-topbar">
-          <div className="bs-breadcrumb">
+          <div className="bs-breadcrumb" aria-live="polite">
             <span>Bookshelf</span>
             <span aria-hidden="true">/</span>
-            <strong>
-              {navigation.find((item) => item.id === activeSection)?.label ||
-                "Overview"}
-            </strong>
+            <strong>{activeNavigationItem?.label || "Overview"}</strong>
           </div>
 
           <div className="bs-topbar-actions">
@@ -194,6 +207,7 @@ export default function AppShell({
               <span aria-hidden="true">
                 {theme === "dark" ? "☼" : "☾"}
               </span>
+
               <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
             </button>
           </div>
@@ -201,146 +215,174 @@ export default function AppShell({
 
         <div className="bs-workspace">
           <div className="bs-content-column">
-            <section
-              className="bs-welcome"
-              id="section-overview"
-              aria-labelledby="bs-welcome-title"
-            >
-              <div className="bs-welcome-copy">
-                <span className="bs-eyebrow">YOUR PERSONAL LIBRARY</span>
-                <h1 id="bs-welcome-title">
-                  A world of books,
-                  <br />
-                  <span>one space to explore.</span>
-                </h1>
-                <p>
-                  Keep your collection organized, discover your next read,
-                  and explore ideas with your AI research companion.
-                </p>
+            {activePage === "overview" && (
+              <section
+                className="bs-welcome bs-page"
+                aria-labelledby="bs-welcome-title"
+              >
+                <div className="bs-welcome-copy">
+                  <span className="bs-eyebrow">
+                    YOUR PERSONAL LIBRARY
+                  </span>
 
-                <div className="bs-welcome-actions">
-                  <button
-                    className="bs-button bs-button-primary"
-                    type="button"
-                    onClick={() => navigateTo("bookshelf")}
-                  >
-                    <span aria-hidden="true">＋</span> View my bookshelf
-                  </button>
+                  <h1 id="bs-welcome-title">
+                    A world of books,
+                    <br />
+                    <span>one space to explore.</span>
+                  </h1>
+
+                  <p>
+                    Keep your collection organized, discover your next read,
+                    and explore ideas with your AI research companion.
+                  </p>
+
+                  <div className="bs-welcome-actions">
+                    <button
+                      className="bs-button bs-button-primary"
+                      type="button"
+                      onClick={() => navigateTo("bookshelf")}
+                    >
+                      <span aria-hidden="true">＋</span>
+                      View my bookshelf
+                    </button>
+
+                    <button
+                      className="bs-button bs-button-secondary"
+                      type="button"
+                      onClick={() => navigateTo("discover")}
+                    >
+                      Discover books
+                    </button>
+
+                    <button
+                      className="bs-button bs-button-secondary"
+                      type="button"
+                      onClick={() => navigateTo("recommendations")}
+                    >
+                      View recommendations
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bs-welcome-art" aria-hidden="true">
+                  <span className="bs-art-orbit bs-art-orbit-one" />
+                  <span className="bs-art-orbit bs-art-orbit-two" />
+
+                  <div className="bs-art-book bs-art-book-back" />
+
+                  <div className="bs-art-book bs-art-book-front">
+                    <span>THE</span>
+
+                    <strong>
+                      READING
+                      <br />
+                      ROOM
+                    </strong>
+
+                    <i />
+                  </div>
+
+                  <span className="bs-art-star">✦</span>
+                </div>
+              </section>
+            )}
+
+            {activePage === "bookshelf" && (
+              <section
+                className="bs-page bs-section"
+                aria-labelledby="bs-bookshelf-title"
+              >
+                <div className="bs-section-heading">
+                  <div>
+                    <span className="bs-eyebrow">YOUR COLLECTION</span>
+                    <h1 id="bs-bookshelf-title">My Bookshelf</h1>
+                    <p>Your saved books and reading progress.</p>
+                  </div>
 
                   <button
-                    className="bs-button bs-button-secondary"
+                    className="bs-text-button"
                     type="button"
                     onClick={() => navigateTo("discover")}
                   >
-                    Discover books
+                    Find books <span aria-hidden="true">→</span>
                   </button>
                 </div>
-              </div>
 
-              <div className="bs-welcome-art" aria-hidden="true">
-                <span className="bs-art-orbit bs-art-orbit-one" />
-                <span className="bs-art-orbit bs-art-orbit-two" />
-                <div className="bs-art-book bs-art-book-back" />
-                <div className="bs-art-book bs-art-book-front">
-                  <span>THE</span>
-                  <strong>
-                    READING
-                    <br />
-                    ROOM
-                  </strong>
-                  <i />
-                </div>
-                <span className="bs-art-star">✦</span>
-              </div>
-            </section>
+                <div className="bs-feature-content">{bookshelf}</div>
+              </section>
+            )}
 
-            <section
-              className="bs-section"
-              id="section-bookshelf"
-              aria-labelledby="bs-bookshelf-title"
-            >
-              <div className="bs-section-heading">
-                <div>
-                  <span className="bs-eyebrow">YOUR COLLECTION</span>
-                  <h2 id="bs-bookshelf-title">My Bookshelf</h2>
-                  <p>Your saved books and reading progress.</p>
-                </div>
-
-                <button
-                  className="bs-text-button"
-                  type="button"
-                  onClick={() => navigateTo("discover")}
-                >
-                  Add books <span aria-hidden="true">→</span>
-                </button>
-              </div>
-
-              <div className="bs-feature-content">{bookshelf}</div>
-            </section>
-
-            <section
-              className="bs-section"
-              id="section-discover"
-              aria-labelledby="bs-discover-title"
-            >
-              <div className="bs-section-heading">
-                <div>
-                  <span className="bs-eyebrow">FIND SOMETHING NEW</span>
-                  <h2 id="bs-discover-title">Discover Books</h2>
-                  <p>Search the catalog for your next great read.</p>
-                </div>
-              </div>
-
-              <div className="bs-feature-content">{discover}</div>
-            </section>
-
-            <section
-              className="bs-section"
-              id="section-recommendations"
-              aria-labelledby="bs-recommendations-title"
-            >
-              <div className="bs-section-heading">
-                <div>
-                  <span className="bs-eyebrow">PICKED FOR YOU</span>
-                  <h2 id="bs-recommendations-title">Your next read</h2>
-                  <p>Compare recommendations from two approaches.</p>
-                </div>
-              </div>
-
-              <div
-                className="bs-segmented"
-                role="group"
-                aria-label="Recommendation method"
+            {activePage === "discover" && (
+              <section
+                className="bs-page bs-section"
+                aria-labelledby="bs-discover-title"
               >
-                <button
-                  type="button"
-                  className={
-                    recommendationMode === "content" ? "is-selected" : ""
-                  }
-                  aria-pressed={recommendationMode === "content"}
-                  onClick={() => setRecommendationMode("content")}
-                >
-                  <span aria-hidden="true">▤</span> Content-based
-                </button>
+                <div className="bs-section-heading">
+                  <div>
+                    <span className="bs-eyebrow">FIND SOMETHING NEW</span>
+                    <h1 id="bs-discover-title">Discover Books</h1>
+                    <p>Search the catalog for your next great read.</p>
+                  </div>
+                </div>
 
-                <button
-                  type="button"
-                  className={
-                    recommendationMode === "ai" ? "is-selected" : ""
-                  }
-                  aria-pressed={recommendationMode === "ai"}
-                  onClick={() => setRecommendationMode("ai")}
-                >
-                  <span aria-hidden="true">✧</span> AI recommendations
-                </button>
-              </div>
+                <div className="bs-feature-content">{discover}</div>
+              </section>
+            )}
 
-              <div className="bs-feature-content">
-                {recommendationMode === "content"
-                  ? contentRecommendations
-                  : aiRecommendations}
-              </div>
-            </section>
+            {activePage === "recommendations" && (
+              <section
+                className="bs-page bs-section"
+                aria-labelledby="bs-recommendations-title"
+              >
+                <div className="bs-section-heading">
+                  <div>
+                    <span className="bs-eyebrow">PICKED FOR YOU</span>
+                    <h1 id="bs-recommendations-title">
+                      Your Recommendations
+                    </h1>
+                    <p>
+                      Explore personalized picks and AI-generated book ideas.
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className="bs-segmented"
+                  role="group"
+                  aria-label="Recommendation method"
+                >
+                  <button
+                    type="button"
+                    className={
+                      recommendationMode === "content" ? "is-selected" : ""
+                    }
+                    aria-pressed={recommendationMode === "content"}
+                    onClick={() => setRecommendationMode("content")}
+                  >
+                    <span aria-hidden="true">▤</span>
+                    Content-based
+                  </button>
+
+                  <button
+                    type="button"
+                    className={
+                      recommendationMode === "ai" ? "is-selected" : ""
+                    }
+                    aria-pressed={recommendationMode === "ai"}
+                    onClick={() => setRecommendationMode("ai")}
+                  >
+                    <span aria-hidden="true">✧</span>
+                    AI recommendations
+                  </button>
+                </div>
+
+                <div className="bs-feature-content">
+                  {recommendationMode === "content"
+                    ? contentRecommendations
+                    : aiRecommendations}
+                </div>
+              </section>
+            )}
 
             <footer className="bs-footer">
               <span>Bookshelf PoweredAI</span>
@@ -350,21 +392,22 @@ export default function AppShell({
 
           <aside
             className="bs-research-column"
-            id="section-research"
-            aria-label="AI research panel"
+            id="bs-research-panel"
+            aria-label="AI Assistant"
           >
             <div className="bs-research-heading">
               <div>
-                <span className="bs-eyebrow">YOUR AI WORKSPACE</span>
-                <h2>Research Assistant</h2>
+                <span className="bs-eyebrow">YOUR READING COMPANION</span>
+                <h2>AI Assistant</h2>
               </div>
+
               <span className="bs-ai-badge" aria-label="AI">
                 ✧
               </span>
             </div>
 
             <p className="bs-research-description">
-              Explore ideas, ask questions, and research your next read.
+              Ask about books, authors, literary themes, or research ideas.
             </p>
 
             <div className="bs-research-body">{researchAssistant}</div>
