@@ -11,6 +11,7 @@ const bookRoutes = require("./routes/books");
 const catalogRoutes = require("./routes/catalog");
 const recommendationRoutes = require("./routes/recommendations");
 const aiRoutes = require("./routes/ai");
+const researchRoutes = require("./routes/research");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,6 +34,7 @@ app.use("/api/books", bookRoutes);
 app.use("/api/catalog", catalogRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/research", researchRoutes);
 
 
 // 4. Health check

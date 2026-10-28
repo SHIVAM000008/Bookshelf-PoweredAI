@@ -324,3 +324,39 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Give the logged-in dashboard enough room for its components. */
+.auth-card.dashboard-card {
+  width: 100%;
+  max-width: 1200px;
+  box-sizing: border-box;
+}
+
+/* Prevent wide dashboard sections from overflowing. */
+.dashboard-card .research-assistant {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.dashboard-card .research-layout {
+  width: 100%;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+}
+
+.dashboard-card .research-conversation,
+.dashboard-card .research-sidebar {
+  min-width: 0;
+}
+
+.dashboard-card .research-prompt-form textarea {
+  display: block;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 650px) {
+  .dashboard-card .research-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

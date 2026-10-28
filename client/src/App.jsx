@@ -13,6 +13,7 @@ import Bookshelf from "./components/Bookshelf";
 import DiscoverBooks from "./components/DiscoverBooks";
 import Recommendations from "./components/Recommendations";
 import AIRecommendations from "./components/AIRecommendations";
+import ResearchAssistant from "./components/ResearchAssistant";
 
 function App() {
   // ============================================================
@@ -182,8 +183,8 @@ function App() {
 
   if (user) {
     return (
-      <main className="auth-container">
-        <section className="auth-card">
+      <main className="dashboard-container">
+        <section className="dashboard-card">
           {/* Dashboard heading */}
           <h1>Bookshelf PoweredAI</h1>
 
@@ -230,6 +231,7 @@ function App() {
           ================================================= */}
           <Recommendations onBookAdded={handleBookAdded} />
           <AIRecommendations onBookAdded={handleBookAdded} />
+          <ResearchAssistant />
 
           {/* Authentication-related error messages */}
           {error && (
