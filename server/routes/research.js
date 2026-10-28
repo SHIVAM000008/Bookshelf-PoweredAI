@@ -113,7 +113,7 @@ router.get("/chats/:chatId", async (req, res) => {
 });
 
 // POST /api/research/chats/:chatId/messages
-// Send a message and generate an AI response.
+// Generate an AI response and save it without overwriting concurrent updates.
 router.post("/chats/:chatId/messages", async (req, res) => {
   try {
     const { chatId } = req.params;
@@ -177,10 +177,7 @@ router.post("/chats/:chatId/messages", async (req, res) => {
       // Do not save a user message if the AI request failed.
       console.error("Research AI request failed:", error.message);
 
-      const status =
-        error.status === 429
-          ? 429
-          : 502;
+      const status = error.status === 429 ? 429 : 502;
 
       return res.status(status).json({
         message:
@@ -198,42 +195,90 @@ router.post("/chats/:chatId/messages", async (req, res) => {
       });
     }
 
-    // Persist both messages only after receiving a usable AI response.
-    chat.messages.push(
-      {
-        role: "user",
-        content,
-      },
-      {
-        role: "assistant",
-        content: answer,
-        model:
-          typeof aiResult.model === "string"
-            ? aiResult.model
-            : "",
-      }
-    );
+    const now = new Date();
 
-    // Give new conversations a useful title based on their first message.
+    // Prepare both messages before the atomic database update.
+    const userMessage = {
+      _id: new mongoose.Types.ObjectId(),
+      role: "user",
+      content,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const assistantMessage = {
+      _id: new mongoose.Types.ObjectId(),
+      role: "assistant",
+      content: answer,
+      model:
+        typeof aiResult.model === "string"
+          ? aiResult.model
+          : "",
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    // Use the first exchange to set a useful conversation title.
+    const updates = {
+      lastMessageAt: now,
+      updatedAt: now,
+    };
+
     if (
       chat.title === "New Research Chat" &&
-      chat.messages.length === 2
+      chat.messages.length === 0
     ) {
-      chat.title =
+      updates.title =
         content.length > 60
           ? `${content.slice(0, 57)}...`
           : content;
     }
 
-    chat.lastMessageAt = new Date();
+    // Optimistic concurrency control:
+    // update only if the chat version has not changed since it was read.
+    const expectedVersion = chat.__v ?? 0;
 
-    await chat.save();
+    const updateResult = await ResearchChat.updateOne(
+      {
+        _id: chat._id,
+        owner: req.user._id,
+        __v: expectedVersion,
+      },
+      {
+        $push: {
+          messages: {
+            $each: [userMessage, assistantMessage],
+          },
+        },
+        $set: updates,
+        $inc: {
+          __v: 1,
+        },
+      }
+    );
 
-    const savedMessages = chat.messages.slice(-2);
+    if (updateResult.matchedCount === 0) {
+      // Distinguish a deleted chat from a concurrent modification.
+      const stillExists = await ResearchChat.exists({
+        _id: chat._id,
+        owner: req.user._id,
+      });
+
+      if (!stillExists) {
+        return res.status(404).json({
+          message: "Research conversation not found.",
+        });
+      }
+
+      return res.status(409).json({
+        message:
+          "This conversation changed while your response was being generated. Reload the conversation and try again.",
+      });
+    }
 
     return res.json({
       chatId: chat._id,
-      messages: savedMessages,
+      messages: [userMessage, assistantMessage],
     });
   } catch (error) {
     console.error("Research message processing failed:", error.message);
