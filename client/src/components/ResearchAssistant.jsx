@@ -4,11 +4,9 @@ import { apiRequest } from "../lib/api";
 import "./ResearchAssistant.css";
 
 export default function ResearchAssistant() {
-  const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [prompt, setPrompt] = useState("");
-  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
@@ -17,102 +15,12 @@ export default function ResearchAssistant() {
 
   useEffect(() => {
     mountedRef.current = true;
-    const controller = new AbortController();
-
-    async function fetchChats() {
-      try {
-        const data = await apiRequest("/research/chats", {
-          signal: controller.signal,
-        });
-
-        if (!mountedRef.current || controller.signal.aborted) return;
-
-        setChats(data.chats || []);
-      } catch (err) {
-        if (!mountedRef.current || controller.signal.aborted) return;
-
-        setError(err.message || "Could not load conversations.");
-      } finally {
-        if (mountedRef.current && !controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    fetchChats();
 
     return () => {
       mountedRef.current = false;
       chatRequestIdRef.current += 1;
-      controller.abort();
     };
   }, []);
-
-  async function createChat() {
-    setError("");
-
-    try {
-      const data = await apiRequest("/research/chats", {
-        method: "POST",
-        body: JSON.stringify({}),
-      });
-
-      if (!mountedRef.current) return;
-
-      const chat = data.chat;
-
-      setChats((previous) => [
-        chat,
-        ...previous.filter((item) => item._id !== chat._id),
-      ]);
-
-      setActiveChat(chat);
-      setMessages([]);
-      setPrompt("");
-    } catch (err) {
-      if (!mountedRef.current) return;
-      setError(err.message || "Could not create a conversation.");
-    }
-  }
-
-  async function openChat(chatId) {
-    if (activeChat?._id === chatId) return;
-
-    const requestId = ++chatRequestIdRef.current;
-
-    setError("");
-    setLoading(true);
-
-    try {
-      const data = await apiRequest(`/research/chats/${chatId}`);
-
-      if (
-        !mountedRef.current ||
-        requestId !== chatRequestIdRef.current
-      ) {
-        return;
-      }
-
-      setActiveChat(data.chat);
-      setMessages(data.chat.messages || []);
-    } catch (err) {
-      if (
-        !mountedRef.current ||
-        requestId !== chatRequestIdRef.current
-      ) {
-        return;
-      }
-
-      setError(err.message || "Could not open this conversation.");
-    } finally {
-      if (
-        mountedRef.current &&
-        requestId === chatRequestIdRef.current
-      ) {
-        setLoading(false);
-      }
-    }
-  }
 
   async function sendMessage(event) {
     event.preventDefault();
@@ -133,17 +41,14 @@ export default function ResearchAssistant() {
           body: JSON.stringify({}),
         });
 
-        const chat = created.chat;
-        chatId = chat._id;
-
         if (!mountedRef.current) return;
 
+        const chat = created.chat;
+        chatId = chat._id;
         setActiveChat(chat);
-        setChats((previous) => [
-          chat,
-          ...previous.filter((item) => item._id !== chat._id),
-        ]);
       }
+
+      const requestId = chatRequestIdRef.current;
 
       const data = await apiRequest(
         `/research/chats/${chatId}/messages`,
@@ -153,16 +58,15 @@ export default function ResearchAssistant() {
         }
       );
 
-      if (!mountedRef.current) return;
+      if (
+        !mountedRef.current ||
+        requestId !== chatRequestIdRef.current
+      ) {
+        return;
+      }
 
       setMessages((previous) => [...previous, ...data.messages]);
       setPrompt("");
-
-      const refreshed = await apiRequest("/research/chats");
-
-      if (!mountedRef.current) return;
-
-      setChats(refreshed.chats || []);
     } catch (err) {
       if (!mountedRef.current) return;
 
@@ -174,18 +78,15 @@ export default function ResearchAssistant() {
 
           setActiveChat(latest.chat);
           setMessages(latest.chat.messages || []);
-
           setError(
             "This conversation changed while you were waiting. " +
-              "The latest messages have been loaded. Please send " +
-              "your question again if it wasn't answered."
+              "The latest messages have been loaded. Please try again."
           );
         } catch {
           if (!mountedRef.current) return;
 
           setError(
-            "This conversation changed, but its latest messages " +
-              "could not be loaded. Please reopen the conversation."
+            "Could not load the latest messages. Please try again."
           );
         }
       } else {
@@ -198,53 +99,8 @@ export default function ResearchAssistant() {
     }
   }
 
-  async function deleteChat(chatId) {
-    const confirmed = window.confirm(
-      "Delete this research conversation permanently?"
-    );
-
-    if (!confirmed) return;
-
-    setError("");
-
-    try {
-      await apiRequest(`/research/chats/${chatId}`, {
-        method: "DELETE",
-      });
-
-      if (!mountedRef.current) return;
-
-      setChats((previous) =>
-        previous.filter((chat) => chat._id !== chatId)
-      );
-
-      if (activeChat?._id === chatId) {
-        chatRequestIdRef.current += 1;
-        setActiveChat(null);
-        setMessages([]);
-        setPrompt("");
-      }
-    } catch (err) {
-      if (!mountedRef.current) return;
-      setError(err.message || "Could not delete this conversation.");
-    }
-  }
-
   return (
     <section className="research-assistant" aria-label="Research chat">
-      <header className="research-header">
-        <div>
-          <h2>AI Research Assistant</h2>
-          <p>
-            Explore books, literary themes, and research questions with AI.
-          </p>
-        </div>
-
-        <button type="button" onClick={createChat} disabled={sending}>
-          + New conversation
-        </button>
-      </header>
-
       {error && (
         <p className="research-error" role="alert">
           {error}
@@ -252,69 +108,19 @@ export default function ResearchAssistant() {
       )}
 
       <div className="research-layout">
-        <aside className="research-sidebar">
-          <h3>Your conversations</h3>
-
-          {loading && chats.length === 0 && (
-            <p>Loading conversations...</p>
-          )}
-
-          {!loading && chats.length === 0 && (
-            <p>No conversations yet. Start a new one.</p>
-          )}
-
-          {chats.map((chat) => (
-            <div
-              className={`research-chat-item ${
-                activeChat?._id === chat._id ? "active" : ""
-              }`}
-              key={chat._id}
-            >
-              <button
-                type="button"
-                className="research-chat-open"
-                onClick={() => openChat(chat._id)}
-                aria-current={
-                  activeChat?._id === chat._id ? "true" : undefined
-                }
-                title={chat.title || "New Research Chat"}
-              >
-                {chat.title || "New Research Chat"}
-              </button>
-
-              <button
-                type="button"
-                className="research-delete-button"
-                onClick={() => deleteChat(chat._id)}
-                aria-label={`Delete ${chat.title || "conversation"}`}
-                title="Delete conversation"
-                disabled={sending}
-              >
-                Delete
-              </button>
-            </div>
-          ))}
-        </aside>
-
         <div className="research-conversation">
           <div className="research-messages" aria-live="polite">
-            {!activeChat && (
+            {!activeChat && messages.length === 0 && (
               <div className="research-empty">
                 <span className="research-empty-icon" aria-hidden="true">
                   ✧
                 </span>
                 <h3>What would you like to research?</h3>
                 <p>
-                  Ask about a novel, an author, literary themes, or how to
-                  structure your research.
+                  Ask about a book, an author, literary themes, or a
+                  research question.
                 </p>
               </div>
-            )}
-
-            {activeChat && messages.length === 0 && (
-              <p className="research-start-hint">
-                Send a message to begin this conversation.
-              </p>
             )}
 
             {messages.map((message, index) => (
@@ -338,15 +144,15 @@ export default function ResearchAssistant() {
 
           <form className="research-prompt-form" onSubmit={sendMessage}>
             <label htmlFor="research-prompt">
-              Your research question
+              Your question
             </label>
 
             <textarea
               id="research-prompt"
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
-              placeholder="Ask a question about a book or author…"
-              rows={3}
+              placeholder="Ask about a book or author…"
+              rows={2}
               maxLength={4000}
               required
               disabled={sending}
