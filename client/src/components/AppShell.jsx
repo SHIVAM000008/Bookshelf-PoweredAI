@@ -1,13 +1,12 @@
-
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./AppShell.css";
+import KarwaChauthGift from "./KarwaChauthGift";
 
 const navigation = [
   { id: "overview", label: "Overview", icon: "⌂" },
   { id: "bookshelf", label: "My Bookshelf", icon: "▤" },
   { id: "discover", label: "Discover Books", icon: "⌕" },
   { id: "recommendations", label: "Recommendations", icon: "✧" },
-  { id: "profile", label: "Profile", icon: "◉" },
 ];
 
 function readSavedTheme() {
@@ -66,6 +65,9 @@ export default function AppShell({
     readSavedSidebarState
   );
   const [recommendationMode, setRecommendationMode] = useState("content");
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const profileRef = useRef(null);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -88,20 +90,40 @@ export default function AppShell({
     }
   }, [sidebarCollapsed]);
 
+  // Close the profile popover when clicking outside or pressing Escape.
   useEffect(() => {
-    if (!mobileMenuOpen) return undefined;
+    if (!profileOpen && !mobileMenuOpen) return undefined;
 
-    function handleKeyDown(event) {
-      if (event.key === "Escape") setMobileMenuOpen(false);
+    function handlePointerDown(event) {
+      if (
+        profileOpen &&
+        profileRef.current &&
+        !profileRef.current.contains(event.target)
+      ) {
+        setProfileOpen(false);
+      }
     }
 
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        setProfileOpen(false);
+        setMobileMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [mobileMenuOpen]);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [profileOpen, mobileMenuOpen]);
 
   function navigateTo(page) {
     setActivePage(page);
     setMobileMenuOpen(false);
+    setProfileOpen(false);
   }
 
   const displayName =
@@ -115,18 +137,19 @@ export default function AppShell({
   );
 
   return (
-    <div className={`bs-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
-      <button
-        className="bs-mobile-menu"
-        type="button"
-        onClick={() => setMobileMenuOpen((open) => !open)}
-        aria-expanded={mobileMenuOpen}
-        aria-controls="bs-sidebar"
-        aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
-      >
-        {mobileMenuOpen ? "✕" : "☰"}
-      </button>
+  <div className={`bs-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
+    <KarwaChauthGift />
 
+    <button
+      className="bs-mobile-menu"
+      type="button"
+      onClick={() => setMobileMenuOpen((open) => !open)}
+      aria-expanded={mobileMenuOpen}
+      aria-controls="bs-sidebar"
+      aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
+    >
+      {mobileMenuOpen ? "✕" : "☰"}
+    </button>
       {mobileMenuOpen && (
         <button
           className="bs-mobile-backdrop"
@@ -174,35 +197,47 @@ export default function AppShell({
               <span className="bs-nav-icon" aria-hidden="true">
                 {item.icon}
               </span>
+
               <span className="bs-nav-text">{item.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className="bs-sidebar-bottom">
-          <div className="bs-user">
-            <div className="bs-avatar" aria-hidden="true">
-              {displayName.charAt(0).toUpperCase()}
-            </div>
+        {/* Theme toggle stays at the bottom of the sidebar. */}
+        <div
+          className="bs-sidebar-bottom"
+          style={{
+            marginTop: "auto",
+            paddingTop: "20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+          }}
+        >
+          <button
+            className="bs-theme-toggle"
+            type="button"
+            onClick={() =>
+              setTheme((current) =>
+                current === "dark" ? "light" : "dark"
+              )
+            }
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            style={{
+              alignSelf: "flex-start",
+              justifyContent: "flex-start",
+              width: "100%",
+            }}
+          >
+            <span aria-hidden="true">
+              {theme === "dark" ? "☼" : "☾"}
+            </span>
 
-            <div className="bs-user-copy">
-              <strong>{displayName}</strong>
-              <small>Your library</small>
-            </div>
-
-            {onLogout && (
-              <button
-                type="button"
-                className="bs-logout"
-                onClick={onLogout}
-                aria-label="Log out"
-                title="Log out"
-              >
-                <span aria-hidden="true">↗</span>
-                <span>Logout</span>
-              </button>
-            )}
-          </div>
+            <span>
+              {theme === "dark" ? "Light mode" : "Dark mode"}
+            </span>
+          </button>
         </div>
       </aside>
 
@@ -233,28 +268,269 @@ export default function AppShell({
             </div>
           </div>
 
-          <div className="bs-topbar-actions">
+          <div
+            className="bs-topbar-actions"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: "16px",
+              minWidth: 0,
+            }}
+          >
             <span className="bs-status">
               <span className="bs-status-dot" />
               Your reading space
             </span>
 
-            <button
-              className="bs-theme-toggle"
-              type="button"
-              onClick={() =>
-                setTheme((current) =>
-                  current === "dark" ? "light" : "dark"
-                )
-              }
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-              title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            {/* Header profile button and compact dropdown. */}
+            <div
+              ref={profileRef}
+              style={{
+                position: "relative",
+                flexShrink: 0,
+              }}
             >
-              <span aria-hidden="true">
-                {theme === "dark" ? "☼" : "☾"}
-              </span>
-              <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
-            </button>
+              <button
+                type="button"
+                className="bs-user"
+                onClick={() => setProfileOpen((open) => !open)}
+                aria-label={`Open profile menu for ${displayName}`}
+                aria-expanded={profileOpen}
+                aria-haspopup="true"
+                aria-controls="bs-profile-popover"
+                title="Account menu"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  maxWidth: "220px",
+                  minWidth: 0,
+                  padding: "6px 10px",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "10px",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                  textAlign: "left",
+                  cursor: "pointer",
+                }}
+              >
+                <span
+                  className="bs-avatar"
+                  aria-hidden="true"
+                  style={{ flexShrink: 0 }}
+                >
+                  {displayName.charAt(0).toUpperCase()}
+                </span>
+
+                <span
+                  className="bs-user-copy"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    minWidth: 0,
+                    textAlign: "left",
+                  }}
+                >
+                  <strong
+                    style={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      maxWidth: "130px",
+                    }}
+                  >
+                    {displayName}
+                  </strong>
+
+                  <small>My account</small>
+                </span>
+
+                <span
+                  aria-hidden="true"
+                  style={{
+                    fontSize: "12px",
+                    transform: profileOpen ? "rotate(180deg)" : "none",
+                    transition: "transform 150ms ease",
+                  }}
+                >
+                  ▾
+                </span>
+              </button>
+
+              {profileOpen && (
+                <div
+                  id="bs-profile-popover"
+                  role="region"
+                  aria-label="Account details"
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 10px)",
+                    right: 0,
+                    zIndex: 1000,
+                    width: "min(320px, calc(100vw - 24px))",
+                    padding: "18px",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "14px",
+                    background: "var(--bg-card)",
+                    color: "var(--text-primary)",
+                    boxShadow: "var(--shadow-card, 0 12px 36px rgba(0, 0, 0, 0.2))",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      minWidth: 0,
+                      paddingBottom: "16px",
+                      borderBottom: "1px solid var(--border-color)",
+                    }}
+                  >
+                    <div
+                      className="bs-avatar"
+                      aria-hidden="true"
+                      style={{
+                        width: "46px",
+                        height: "46px",
+                        flexShrink: 0,
+                        fontSize: "18px",
+                      }}
+                    >
+                      {displayName.charAt(0).toUpperCase()}
+                    </div>
+
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <strong
+                        style={{
+                          display: "block",
+                          fontSize: "15px",
+                          overflowWrap: "anywhere",
+                        }}
+                      >
+                        {displayName}
+                      </strong>
+
+                      <span
+                        style={{
+                          display: "block",
+                          marginTop: "4px",
+                          color: "var(--text-secondary)",
+                          fontSize: "12px",
+                        }}
+                      >
+                        Bookshelf reader
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "13px",
+                      padding: "16px 0",
+                    }}
+                  >
+                    <div>
+                      <span
+                        style={{
+                          display: "block",
+                          marginBottom: "4px",
+                          color: "var(--text-secondary)",
+                          fontSize: "11px",
+                        }}
+                      >
+                        Full name
+                      </span>
+
+                      <strong
+                        style={{
+                          display: "block",
+                          fontSize: "13px",
+                          overflowWrap: "anywhere",
+                        }}
+                      >
+                        {user?.name || "Not provided"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span
+                        style={{
+                          display: "block",
+                          marginBottom: "4px",
+                          color: "var(--text-secondary)",
+                          fontSize: "11px",
+                        }}
+                      >
+                        Email address
+                      </span>
+
+                      <strong
+                        style={{
+                          display: "block",
+                          fontSize: "13px",
+                          overflowWrap: "anywhere",
+                        }}
+                      >
+                        {user?.email || "Not provided"}
+                      </strong>
+                    </div>
+
+                    {user?.username && (
+                      <div>
+                        <span
+                          style={{
+                            display: "block",
+                            marginBottom: "4px",
+                            color: "var(--text-secondary)",
+                            fontSize: "11px",
+                          }}
+                        >
+                          Username
+                        </span>
+
+                        <strong
+                          style={{
+                            display: "block",
+                            fontSize: "13px",
+                            overflowWrap: "anywhere",
+                          }}
+                        >
+                          {user.username}
+                        </strong>
+                      </div>
+                    )}
+                  </div>
+
+                  {onLogout && (
+                    <button
+                      type="button"
+                      className="bs-logout"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        onLogout();
+                      }}
+                      aria-label="Log out of your account"
+                      style={{
+                        display: "flex",
+                        width: "100%",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        padding: "10px 12px",
+                        borderRadius: "9px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span aria-hidden="true">↗</span>
+                      <span>Logout</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -423,56 +699,6 @@ export default function AppShell({
               </section>
             )}
 
-            {activePage === "profile" && (
-              <section
-                className="bs-page bs-section"
-                aria-labelledby="bs-profile-title"
-              >
-                <div className="bs-section-heading">
-                  <div>
-                    <h1 id="bs-profile-title">My Profile</h1>
-                    <p className="bs-page-description">
-                      Your Bookshelf PoweredAI account details.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bs-feature-content">
-                  <div className="bs-user">
-                    <div className="bs-avatar" aria-hidden="true">
-                      {displayName.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="bs-user-copy">
-                      <strong>{displayName}</strong>
-                      <small>Bookshelf reader</small>
-                    </div>
-                  </div>
-
-                  <div className="bs-profile-details">
-                    <div>
-                      <span>Full name</span>
-                      <strong>{user?.name || "Not provided"}</strong>
-                    </div>
-                    <div>
-                      <span>Email address</span>
-                      <strong>{user?.email || "Not provided"}</strong>
-                    </div>
-                    {user?.username && (
-                      <div>
-                        <span>Username</span>
-                        <strong>{user.username}</strong>
-                      </div>
-                    )}
-                  </div>
-
-                  <p className="bs-page-description">
-                    Your account details are displayed here. Passwords and
-                    other authentication secrets are never shown.
-                  </p>
-                </div>
-              </section>
-            )}
-
             <footer className="bs-footer">
               <span>Bookshelf PoweredAI</span>
             </footer>
@@ -488,6 +714,7 @@ export default function AppShell({
                 <span className="bs-eyebrow">YOUR READING COMPANION</span>
                 <h2>AI Assistant</h2>
               </div>
+
               <span className="bs-ai-badge" aria-label="AI">
                 ✧
               </span>
