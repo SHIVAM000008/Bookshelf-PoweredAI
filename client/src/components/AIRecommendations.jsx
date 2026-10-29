@@ -7,7 +7,6 @@ import "./AIRecommendations.css";
 export default function AIRecommendations({ onBookAdded }) {
   const [recommendations, setRecommendations] = useState([]);
   const [basedOn, setBasedOn] = useState([]);
-  const [model, setModel] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -28,7 +27,6 @@ export default function AIRecommendations({ onBookAdded }) {
 
       setRecommendations((data.recommendations || []).slice(0, 4));
       setBasedOn(data.basedOn || []);
-      setModel(data.model || "");
       setAddedKeys([]);
 
       if (!data.recommendations?.length) {
@@ -126,7 +124,7 @@ export default function AIRecommendations({ onBookAdded }) {
         </p>
       )}
 
-      <div className="ai-recommendations-grid">
+            <div className="ai-recommendations-grid">
         {recommendations.map((book) => (
           <RecommendationBookCard
             key={book.openLibraryKey}
@@ -138,12 +136,6 @@ export default function AIRecommendations({ onBookAdded }) {
           />
         ))}
       </div>
-
-      {model && (
-        <p className="ai-model-info">
-          Generated using: {model}
-        </p>
-      )}
     </section>
   );
 }

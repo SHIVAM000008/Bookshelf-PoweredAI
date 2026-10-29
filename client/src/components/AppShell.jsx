@@ -1,5 +1,7 @@
+
 import { useEffect, useRef, useState } from "react";
 import "./AppShell.css";
+import "./AppShell.responsive.css";
 import KarwaChauthGift from "./KarwaChauthGift";
 
 const navigation = [
@@ -7,6 +9,7 @@ const navigation = [
   { id: "bookshelf", label: "My Bookshelf", icon: "▤" },
   { id: "discover", label: "Discover Books", icon: "⌕" },
   { id: "recommendations", label: "Recommendations", icon: "✧" },
+  { id: "assistant", label: "AI Assistant", icon: "✧" },
 ];
 
 function readSavedTheme() {
@@ -69,6 +72,193 @@ export default function AppShell({
 
   const profileRef = useRef(null);
 
+  // Floating AI Assistant state
+  const assistantPanelRef = useRef(null);
+  const assistantDragRef = useRef(null);
+  const assistantLauncherRef = useRef(null);
+  const launcherDragRef = useRef(null);
+  const suppressLauncherClickRef = useRef(false);
+
+  const [assistantMinimized, setAssistantMinimized] = useState(false);
+  const [assistantPosition, setAssistantPosition] = useState(null);
+  const [launcherPosition, setLauncherPosition] = useState(null);
+
+  // Start dragging from the assistant header.
+  function startAssistantDrag(event) {
+    if (event.button !== 0 || event.target.closest("button")) {
+      return;
+    }
+
+    if (window.matchMedia("(max-width: 680px)").matches) {
+      return;
+    }
+
+    const panel = assistantPanelRef.current;
+    if (!panel) return;
+
+    const bounds = panel.getBoundingClientRect();
+
+    assistantDragRef.current = {
+      pointerId: event.pointerId,
+      offsetX: event.clientX - bounds.left,
+      offsetY: event.clientY - bounds.top,
+    };
+
+    setAssistantPosition({
+      left: bounds.left,
+      top: bounds.top,
+    });
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  // Move the window while keeping it inside the viewport.
+  function moveAssistantDrag(event) {
+    const drag = assistantDragRef.current;
+    const panel = assistantPanelRef.current;
+
+    if (
+      !drag ||
+      !panel ||
+      drag.pointerId !== event.pointerId
+    ) {
+      return;
+    }
+
+    const width = panel.offsetWidth;
+    const height = panel.offsetHeight;
+
+    const maxLeft = Math.max(0, window.innerWidth - width);
+    const maxTop = Math.max(0, window.innerHeight - height);
+
+    setAssistantPosition({
+      left: Math.max(
+        0,
+        Math.min(event.clientX - drag.offsetX, maxLeft)
+      ),
+      top: Math.max(
+        0,
+        Math.min(event.clientY - drag.offsetY, maxTop)
+      ),
+    });
+  }
+
+  function stopAssistantDrag(event) {
+    if (
+      assistantDragRef.current?.pointerId === event.pointerId
+    ) {
+      assistantDragRef.current = null;
+    }
+  }
+
+  // Drag the minimized launcher without triggering its open action.
+  function startLauncherDrag(event) {
+    if (event.button !== 0 || window.matchMedia("(max-width: 680px)").matches) {
+      return;
+    }
+
+    const launcher = assistantLauncherRef.current;
+    if (!launcher) return;
+
+    const rect = launcher.getBoundingClientRect();
+    launcherDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+      moved: false,
+    };
+    suppressLauncherClickRef.current = false;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function moveLauncherDrag(event) {
+    const drag = launcherDragRef.current;
+    const launcher = assistantLauncherRef.current;
+    if (!drag || !launcher || drag.pointerId !== event.pointerId) return;
+
+    if (
+      !drag.moved &&
+      Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 6
+    ) {
+      return;
+    }
+
+    drag.moved = true;
+    const maxLeft = Math.max(0, window.innerWidth - launcher.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - launcher.offsetHeight);
+
+    setLauncherPosition({
+      left: Math.max(0, Math.min(event.clientX - drag.offsetX, maxLeft)),
+      top: Math.max(0, Math.min(event.clientY - drag.offsetY, maxTop)),
+    });
+  }
+
+  function stopLauncherDrag(event) {
+    const drag = launcherDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    suppressLauncherClickRef.current = drag.moved;
+    launcherDragRef.current = null;
+  }
+
+  // Keep the floating window visible after resizing.
+  useEffect(() => {
+    function keepAssistantVisible() {
+      if (window.matchMedia("(max-width: 680px)").matches) {
+        return;
+      }
+
+      const panel = assistantPanelRef.current;
+      if (!panel) return;
+
+      setAssistantPosition((current) => {
+        if (!current) return current;
+
+        return {
+          left: Math.max(
+            0,
+            Math.min(
+              current.left,
+              Math.max(0, window.innerWidth - panel.offsetWidth)
+            )
+          ),
+          top: Math.max(
+            0,
+            Math.min(
+              current.top,
+              Math.max(0, window.innerHeight - panel.offsetHeight)
+            )
+          ),
+        };
+      });
+    }
+
+    function keepLauncherVisible() {
+      const launcher = assistantLauncherRef.current;
+      if (!launcher || window.matchMedia("(max-width: 680px)").matches) return;
+      setLauncherPosition((current) => {
+        if (!current) return current;
+        return {
+          left: Math.max(0, Math.min(current.left, window.innerWidth - launcher.offsetWidth)),
+          top: Math.max(0, Math.min(current.top, window.innerHeight - launcher.offsetHeight)),
+        };
+      });
+    }
+
+    window.addEventListener("resize", keepAssistantVisible);
+    window.addEventListener("resize", keepLauncherVisible);
+
+    return () => {
+      window.removeEventListener("resize", keepAssistantVisible);
+      window.removeEventListener("resize", keepLauncherVisible);
+    };
+  }, []);
+
+  // Existing theme effect follows below.
+
+  // Apply the selected theme.
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
 
@@ -79,6 +269,7 @@ export default function AppShell({
     }
   }, [theme]);
 
+  // Remember the desktop sidebar preference.
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -90,7 +281,7 @@ export default function AppShell({
     }
   }, [sidebarCollapsed]);
 
-  // Close the profile popover when clicking outside or pressing Escape.
+  // Close the profile menu or mobile navigation when appropriate.
   useEffect(() => {
     if (!profileOpen && !mobileMenuOpen) return undefined;
 
@@ -115,7 +306,10 @@ export default function AppShell({
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener(
+        "pointerdown",
+        handlePointerDown
+      );
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [profileOpen, mobileMenuOpen]);
@@ -137,19 +331,31 @@ export default function AppShell({
   );
 
   return (
-  <div className={`bs-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
-    <KarwaChauthGift />
-
-    <button
-      className="bs-mobile-menu"
-      type="button"
-      onClick={() => setMobileMenuOpen((open) => !open)}
-      aria-expanded={mobileMenuOpen}
-      aria-controls="bs-sidebar"
-      aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
+    <div
+      className={`bs-app${
+        sidebarCollapsed ? " sidebar-collapsed" : ""
+      }`}
     >
-      {mobileMenuOpen ? "✕" : "☰"}
-    </button>
+      <KarwaChauthGift />
+
+      {/* Mobile navigation button */}
+      <button
+        className="bs-mobile-menu"
+        type="button"
+        onClick={() =>
+          setMobileMenuOpen((open) => !open)
+        }
+        aria-expanded={mobileMenuOpen}
+        aria-controls="bs-sidebar"
+        aria-label={
+          mobileMenuOpen
+            ? "Close navigation"
+            : "Open navigation"
+        }
+      >
+        {mobileMenuOpen ? "✕" : "☰"}
+      </button>
+
       {mobileMenuOpen && (
         <button
           className="bs-mobile-backdrop"
@@ -159,9 +365,12 @@ export default function AppShell({
         />
       )}
 
+      {/* Sidebar */}
       <aside
         id="bs-sidebar"
-        className={`bs-sidebar${mobileMenuOpen ? " is-open" : ""}`}
+        className={`bs-sidebar${
+          mobileMenuOpen ? " is-open" : ""
+        }`}
         aria-label="Sidebar navigation"
       >
         <button
@@ -182,28 +391,50 @@ export default function AppShell({
 
         <div className="bs-nav-label">WORKSPACE</div>
 
-        <nav className="bs-navigation" aria-label="Main navigation">
+        <nav
+          className="bs-navigation"
+          aria-label="Main navigation"
+        >
           {navigation.map((item) => (
             <button
               type="button"
               key={item.id}
               className={`bs-nav-item ${
-                activePage === item.id ? "is-active" : ""
+                item.id === "assistant"
+                  ? "bs-mobile-ai-nav-item"
+                  : ""
+              } ${
+                activePage === item.id
+                  ? "is-active"
+                  : ""
               }`}
               onClick={() => navigateTo(item.id)}
-              aria-current={activePage === item.id ? "page" : undefined}
-              title={sidebarCollapsed ? item.label : undefined}
+              aria-current={
+                activePage === item.id
+                  ? "page"
+                  : undefined
+              }
+              title={
+                sidebarCollapsed
+                  ? item.label
+                  : undefined
+              }
             >
-              <span className="bs-nav-icon" aria-hidden="true">
+              <span
+                className="bs-nav-icon"
+                aria-hidden="true"
+              >
                 {item.icon}
               </span>
 
-              <span className="bs-nav-text">{item.label}</span>
+              <span className="bs-nav-text">
+                {item.label}
+              </span>
             </button>
           ))}
         </nav>
 
-        {/* Theme toggle stays at the bottom of the sidebar. */}
+        {/* Theme toggle */}
         <div
           className="bs-sidebar-bottom"
           style={{
@@ -219,11 +450,21 @@ export default function AppShell({
             type="button"
             onClick={() =>
               setTheme((current) =>
-                current === "dark" ? "light" : "dark"
+                current === "dark"
+                  ? "light"
+                  : "dark"
               )
             }
-            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            aria-label={`Switch to ${
+              theme === "dark"
+                ? "light"
+                : "dark"
+            } mode`}
+            title={`Switch to ${
+              theme === "dark"
+                ? "light"
+                : "dark"
+            } mode`}
             style={{
               alignSelf: "flex-start",
               justifyContent: "flex-start",
@@ -235,12 +476,15 @@ export default function AppShell({
             </span>
 
             <span>
-              {theme === "dark" ? "Light mode" : "Dark mode"}
+              {theme === "dark"
+                ? "Light mode"
+                : "Dark mode"}
             </span>
           </button>
         </div>
       </aside>
 
+      {/* Main content */}
       <main className="bs-main">
         <header className="bs-topbar">
           <div className="bs-topbar-left">
@@ -248,23 +492,39 @@ export default function AppShell({
               className="bs-sidebar-toggle"
               type="button"
               onClick={() => {
-                setSidebarCollapsed((collapsed) => !collapsed);
+                setSidebarCollapsed(
+                  (collapsed) => !collapsed
+                );
                 setMobileMenuOpen(false);
               }}
               aria-expanded={!sidebarCollapsed}
               aria-controls="bs-sidebar"
-              aria-label={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
-              title={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+              aria-label={
+                sidebarCollapsed
+                  ? "Show sidebar"
+                  : "Hide sidebar"
+              }
+              title={
+                sidebarCollapsed
+                  ? "Show sidebar"
+                  : "Hide sidebar"
+              }
             >
               <span aria-hidden="true">
                 {sidebarCollapsed ? "☰" : "◧"}
               </span>
             </button>
 
-            <div className="bs-breadcrumb" aria-live="polite">
+            <div
+              className="bs-breadcrumb"
+              aria-live="polite"
+            >
               <span>Bookshelf</span>
               <span aria-hidden="true">/</span>
-              <strong>{activeNavigationItem?.label || "Overview"}</strong>
+              <strong>
+                {activeNavigationItem?.label ||
+                  "Overview"}
+              </strong>
             </div>
           </div>
 
@@ -283,7 +543,9 @@ export default function AppShell({
               Your reading space
             </span>
 
-            {/* Header profile button and compact dropdown. */}
+            {/* Profile dropdown begins in Part 3 */}
+
+            {/* Header profile button and dropdown */}
             <div
               ref={profileRef}
               style={{
@@ -350,7 +612,9 @@ export default function AppShell({
                   aria-hidden="true"
                   style={{
                     fontSize: "12px",
-                    transform: profileOpen ? "rotate(180deg)" : "none",
+                    transform: profileOpen
+                      ? "rotate(180deg)"
+                      : "none",
                     transition: "transform 150ms ease",
                   }}
                 >
@@ -374,7 +638,8 @@ export default function AppShell({
                     borderRadius: "14px",
                     background: "var(--bg-card)",
                     color: "var(--text-primary)",
-                    boxShadow: "var(--shadow-card, 0 12px 36px rgba(0, 0, 0, 0.2))",
+                    boxShadow:
+                      "var(--shadow-card, 0 12px 36px rgba(0, 0, 0, 0.2))",
                   }}
                 >
                   <div
@@ -384,7 +649,8 @@ export default function AppShell({
                       gap: "12px",
                       minWidth: 0,
                       paddingBottom: "16px",
-                      borderBottom: "1px solid var(--border-color)",
+                      borderBottom:
+                        "1px solid var(--border-color)",
                     }}
                   >
                     <div
@@ -400,7 +666,12 @@ export default function AppShell({
                       {displayName.charAt(0).toUpperCase()}
                     </div>
 
-                    <div style={{ minWidth: 0, flex: 1 }}>
+                    <div
+                      style={{
+                        minWidth: 0,
+                        flex: 1,
+                      }}
+                    >
                       <strong
                         style={{
                           display: "block",
@@ -534,15 +805,27 @@ export default function AppShell({
           </div>
         </header>
 
-        <div className="bs-workspace">
+        {/* Main workspace */}
+        <div
+          className={`bs-workspace${
+            activePage === "assistant"
+              ? " assistant-active"
+              : ""
+          }`}
+        >
           <div className="bs-content-column">
+            {/* Page content continues in Part 4 */}
+
+            {/* Overview page */}
             {activePage === "overview" && (
               <section
                 className="bs-welcome bs-page"
                 aria-labelledby="bs-welcome-title"
               >
                 <div className="bs-welcome-copy">
-                  <span className="bs-eyebrow">YOUR PERSONAL LIBRARY</span>
+                  <span className="bs-eyebrow">
+                    YOUR PERSONAL LIBRARY
+                  </span>
 
                   <h1 id="bs-welcome-title">
                     A world of books,
@@ -586,7 +869,9 @@ export default function AppShell({
                 <div className="bs-welcome-art" aria-hidden="true">
                   <span className="bs-art-orbit bs-art-orbit-one" />
                   <span className="bs-art-orbit bs-art-orbit-two" />
+
                   <div className="bs-art-book bs-art-book-back" />
+
                   <div className="bs-art-book bs-art-book-front">
                     <span>THE</span>
                     <strong>
@@ -596,11 +881,13 @@ export default function AppShell({
                     </strong>
                     <i />
                   </div>
+
                   <span className="bs-art-star">✦</span>
                 </div>
               </section>
             )}
 
+            {/* My Bookshelf page */}
             {activePage === "bookshelf" && (
               <section
                 className="bs-page bs-section"
@@ -619,14 +906,18 @@ export default function AppShell({
                     type="button"
                     onClick={() => navigateTo("discover")}
                   >
-                    Find books <span aria-hidden="true">→</span>
+                    Find books{" "}
+                    <span aria-hidden="true">→</span>
                   </button>
                 </div>
 
-                <div className="bs-feature-content">{bookshelf}</div>
+                <div className="bs-feature-content">
+                  {bookshelf}
+                </div>
               </section>
             )}
 
+            {/* Discover Books page */}
             {activePage === "discover" && (
               <section
                 className="bs-page bs-section"
@@ -634,17 +925,23 @@ export default function AppShell({
               >
                 <div className="bs-section-heading">
                   <div>
-                    <h1 id="bs-discover-title">Discover Books</h1>
+                    <h1 id="bs-discover-title">
+                      Discover Books
+                    </h1>
+
                     <p className="bs-page-description">
                       Search the catalog for your next great read.
                     </p>
                   </div>
                 </div>
 
-                <div className="bs-feature-content">{discover}</div>
+                <div className="bs-feature-content">
+                  {discover}
+                </div>
               </section>
             )}
 
+            {/* Recommendations page */}
             {activePage === "recommendations" && (
               <section
                 className="bs-page bs-section"
@@ -655,6 +952,7 @@ export default function AppShell({
                     <h1 id="bs-recommendations-title">
                       Your Recommendations
                     </h1>
+
                     <p className="bs-page-description">
                       Explore personalized picks and AI-generated book ideas.
                     </p>
@@ -669,10 +967,16 @@ export default function AppShell({
                   <button
                     type="button"
                     className={
-                      recommendationMode === "content" ? "is-selected" : ""
+                      recommendationMode === "content"
+                        ? "is-selected"
+                        : ""
                     }
-                    aria-pressed={recommendationMode === "content"}
-                    onClick={() => setRecommendationMode("content")}
+                    aria-pressed={
+                      recommendationMode === "content"
+                    }
+                    onClick={() =>
+                      setRecommendationMode("content")
+                    }
                   >
                     <span aria-hidden="true">▤</span>
                     Content-based
@@ -681,10 +985,16 @@ export default function AppShell({
                   <button
                     type="button"
                     className={
-                      recommendationMode === "ai" ? "is-selected" : ""
+                      recommendationMode === "ai"
+                        ? "is-selected"
+                        : ""
                     }
-                    aria-pressed={recommendationMode === "ai"}
-                    onClick={() => setRecommendationMode("ai")}
+                    aria-pressed={
+                      recommendationMode === "ai"
+                    }
+                    onClick={() =>
+                      setRecommendationMode("ai")
+                    }
                   >
                     <span aria-hidden="true">✧</span>
                     AI recommendations
@@ -699,34 +1009,109 @@ export default function AppShell({
               </section>
             )}
 
+            {/* Footer and AI Assistant continue in Part 5 */}
+
+            {/* Footer */}
             <footer className="bs-footer">
-              <span>Bookshelf PoweredAI</span>
+              <span>
+                © 2026 Bookshelf PoweredAI. All rights reserved.
+              </span>
             </footer>
           </div>
 
+          {/* Floating AI Assistant */}
           <aside
-            className="bs-research-column"
+            ref={assistantPanelRef}
             id="bs-research-panel"
-            aria-label="AI Assistant"
+            className={`bs-research-column${
+              assistantMinimized ? " is-minimized" : ""
+            }${
+              assistantPosition ? " bs-assistant-positioned" : ""
+            }`}
+            style={
+              assistantPosition
+                ? {
+                    left: `${assistantPosition.left}px`,
+                    top: `${assistantPosition.top}px`,
+                    right: "auto",
+                    bottom: "auto",
+                  }
+                : undefined
+            }
+            aria-label="AI research assistant"
           >
-            <div className="bs-research-heading">
+            <div
+              className="bs-research-heading bs-assistant-drag-handle"
+              onPointerDown={startAssistantDrag}
+              onPointerMove={moveAssistantDrag}
+              onPointerUp={stopAssistantDrag}
+              onPointerCancel={stopAssistantDrag}
+            >
               <div>
-                <span className="bs-eyebrow">YOUR READING COMPANION</span>
+                <span className="bs-eyebrow">
+                  YOUR AI COMPANION
+                </span>
+
                 <h2>AI Assistant</h2>
               </div>
 
-              <span className="bs-ai-badge" aria-label="AI">
-                ✧
-              </span>
+              <button
+                type="button"
+                className="bs-assistant-minimize-button"
+                onPointerDown={(event) => {
+                  event.stopPropagation();
+                }}
+                onClick={() => {
+                  assistantDragRef.current = null;
+                  setAssistantMinimized(true);
+                }}
+                aria-label="Minimize AI Assistant"
+                title="Minimize AI Assistant"
+              >
+                <span aria-hidden="true">−</span>
+              </button>
             </div>
 
-            <p className="bs-research-description">
-              Ask about books, authors, literary themes, or research ideas.
-            </p>
+            <div className="bs-research-body">
+              <p className="bs-research-description">
+                Ask questions, explore ideas, and research books
+                with AI.
+              </p>
 
-            <div className="bs-research-body">{researchAssistant}</div>
+              {researchAssistant}
+            </div>
           </aside>
         </div>
+
+        {/* Reopen minimized AI Assistant */}
+        {assistantMinimized && (
+          <button
+            ref={assistantLauncherRef}
+            type="button"
+            className="bs-assistant-reopen bs-assistant-launcher-glow"
+            style={
+              launcherPosition
+                ? { left: `${launcherPosition.left}px`, top: `${launcherPosition.top}px`, right: "auto", bottom: "auto" }
+                : undefined
+            }
+            onPointerDown={startLauncherDrag}
+            onPointerMove={moveLauncherDrag}
+            onPointerUp={stopLauncherDrag}
+            onPointerCancel={stopLauncherDrag}
+            onClick={() => {
+              if (suppressLauncherClickRef.current) {
+                suppressLauncherClickRef.current = false;
+                return;
+              }
+              setAssistantMinimized(false);
+            }}
+            aria-label="Open AI Assistant"
+            title="Open AI Assistant"
+          >
+            <span aria-hidden="true">✧</span>
+            <span>AI Assistant</span>
+          </button>
+        )}
       </main>
     </div>
   );

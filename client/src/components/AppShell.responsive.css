@@ -1,0 +1,405 @@
+
+/*
+ * Bookshelf PoweredAI
+ * Responsive AI Assistant
+ *
+ * Desktop: floating, draggable and minimizable
+ * Mobile: separate assistant page
+ */
+
+/* Footer stays at the bottom */
+.bs-main {
+  min-height: calc(100dvh - 70px);
+}
+
+.bs-workspace {
+  min-height: calc(100dvh - 100px);
+}
+
+.bs-content-column {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 100px);
+}
+
+.bs-footer {
+  margin-top: auto;
+  width: 100%;
+  padding-right: 0 !important;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.bs-footer span {
+  display: block;
+  width: 100%;
+  text-align: center;
+  color: var(--text-secondary);
+  background: transparent;
+  text-shadow: none;
+  font-weight: 400;
+}
+
+.bs-mobile-ai-nav-item {
+  display: none;
+}
+
+/* Desktop floating assistant */
+@media (min-width: 681px) {
+  .bs-workspace {
+    position: relative;
+    display: block;
+  }
+
+  .bs-content-column {
+    width: 100%;
+    min-width: 0;
+    padding-right: 0 !important;
+  }
+
+  .bs-research-column {
+    position: fixed !important;
+    right: 24px;
+    bottom: 88px;
+    left: auto;
+    top: auto;
+
+    display: flex;
+    flex-direction: column;
+
+    width: 330px;
+    height: 450px;
+    min-width: 0;
+    min-height: 0 !important;
+
+    max-width: calc(100vw - 32px);
+    max-height: calc(100dvh - 32px);
+
+    overflow: hidden;
+    border-radius: 16px;
+
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18);
+    z-index: 40;
+  }
+
+  /* Draggable title bar */
+  .bs-assistant-drag-handle {
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+  }
+
+  .bs-assistant-drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .bs-assistant-minimize-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    width: 30px;
+    height: 30px;
+    padding: 0;
+
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+
+    background: var(--bg-card);
+    color: var(--text-primary);
+
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .bs-assistant-minimize-button:hover {
+    background: var(--bg-secondary);
+  }
+
+  .bs-research-column.is-minimized {
+    display: none !important;
+  }
+
+  /* Floating reopen button */
+  .bs-assistant-reopen {
+    position: fixed;
+    right: 24px;
+    bottom: 88px;
+    z-index: 41;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    padding: 11px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+
+    background: var(--bg-card);
+    color: var(--text-primary);
+
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .bs-assistant-reopen:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Compact chat */
+  .bs-research-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .bs-research-body .research-assistant {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    padding: 10px;
+    overflow: hidden;
+  }
+
+  .bs-research-body .research-messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .bs-research-body .research-empty {
+    min-height: 0;
+    padding: 12px 8px;
+  }
+
+  .bs-research-body .research-empty h3 {
+    margin: 6px 0;
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+
+  .bs-research-body .research-empty p {
+    margin: 4px 0;
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+
+  .bs-research-body textarea {
+    min-height: 42px;
+    max-height: 76px;
+  }
+}
+
+/* Tablet */
+@media (min-width: 681px) and (max-width: 1100px) {
+  .bs-research-column {
+    width: 300px;
+    height: 420px;
+    right: 14px;
+    bottom: 80px;
+  }
+
+  .bs-assistant-reopen {
+    right: 14px;
+    bottom: 80px;
+  }
+  .bs-research-column.bs-assistant-positioned {
+  right: auto !important;
+  bottom: auto !important;
+}
+}
+
+/* Mobile: dedicated AI Assistant view */
+@media (max-width: 680px) {
+  .bs-mobile-ai-nav-item {
+    display: flex;
+  }
+
+  .bs-research-column {
+    display: none !important;
+  }
+
+  .bs-assistant-reopen,
+  .bs-assistant-minimize-button {
+    display: none !important;
+  }
+
+  .bs-workspace.assistant-active {
+    display: block;
+  }
+
+  .bs-workspace.assistant-active .bs-content-column {
+    display: none !important;
+  }
+
+  .bs-workspace.assistant-active .bs-research-column {
+    display: flex !important;
+
+    position: relative !important;
+    inset: auto !important;
+
+    width: 100%;
+    height: calc(100dvh - 130px);
+
+    min-width: 0;
+    min-height: 320px !important;
+    max-width: none;
+    max-height: none;
+
+    margin: 0;
+    border-radius: 14px;
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  .bs-workspace.assistant-active .bs-research-body,
+  .bs-workspace.assistant-active .research-assistant {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .bs-workspace.assistant-active .research-messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .bs-footer {
+    padding-right: 0 !important;
+  }
+}
+
+/* Theme-aware floating AI Assistant glow */
+
+
+/* Floating AI Assistant — Bookshelf theme glow */
+
+@media (min-width: 681px) {
+  .bs-assistant-reopen.bs-assistant-launcher-glow {
+    --ai-glow: var(--brand-primary);
+
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+    isolation: isolate;
+
+    border: 1px solid var(--ai-glow);
+    background: var(--bg-card);
+    color: var(--text-primary);
+
+    animation: bs-ai-brand-pulse 2.2s ease-in-out infinite;
+  }
+
+  .bs-assistant-reopen.bs-assistant-launcher-glow:active {
+    cursor: grabbing;
+  }
+
+  .bs-assistant-reopen.bs-assistant-launcher-glow::before {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border: 1px solid var(--ai-glow);
+    border-radius: inherit;
+    pointer-events: none;
+    animation: bs-ai-brand-ring 2.2s ease-out infinite;
+  }
+
+  .bs-assistant-reopen.bs-assistant-launcher-glow:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 5px;
+  }
+}
+
+
+@keyframes bs-ai-brand-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 8px 2px var(--ai-glow),
+      0 0 20px 4px var(--ai-glow),
+      0 0 38px 6px var(--ai-glow);
+  }
+
+  50% {
+    box-shadow:
+      0 0 16px 5px var(--ai-glow),
+      0 0 36px 10px var(--ai-glow),
+      0 0 65px 16px var(--ai-glow);
+  }
+}
+
+@keyframes bs-ai-brand-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+
+  75%, 100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .bs-assistant-reopen.bs-assistant-launcher-glow,
+  .bs-assistant-reopen.bs-assistant-launcher-glow::before {
+    animation: none !important;
+  }
+}
+
+
+@keyframes bs-ai-theme-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 6px var(--ai-glow),
+      0 0 14px var(--ai-glow);
+  }
+
+  50% {
+    box-shadow:
+      0 0 14px var(--ai-glow),
+      0 0 30px var(--ai-glow);
+  }
+}
+
+@keyframes bs-ai-theme-ring {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+
+  70%, 100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+/* Softer glow for light theme */
+[data-theme="light"]
+.bs-assistant-reopen.bs-assistant-launcher-glow {
+  animation-duration: 3.5s;
+  box-shadow: 0 0 10px var(--ai-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bs-assistant-reopen.bs-assistant-launcher-glow,
+  .bs-assistant-reopen.bs-assistant-launcher-glow::before {
+    animation: none !important;
+  }
+}
+
