@@ -41,14 +41,14 @@ const fireworks = [
 
 export default function KarwaChauthGift() {
   const [visible, setVisible] = useState(() => {
-  return getIndiaDate() === GIFT_DATE;
+  return getIndiaDate() >= GIFT_DATE && getIndiaDate() <= "2026-10-30";
 });
 
   const [expired, setExpired] = useState(false);
 
   useEffect(() => {
     function checkDate() {
-      const isGiftDay = getIndiaDate() === GIFT_DATE;
+      const isGiftDay = getIndiaDate() >= GIFT_DATE && getIndiaDate() <= "2026-10-30";
 
       if (!isGiftDay) {
         setVisible(false);

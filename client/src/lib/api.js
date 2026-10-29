@@ -1,6 +1,6 @@
-const API_URL = "http://localhost:5000/api";
+const API_URL = "/api";
 
-export const API_ORIGIN = API_URL.replace(/\/api\/?$/, "");
+export const API_ORIGIN = "";
 
 export async function apiRequest(path, options = {}) {
   const headers = {
