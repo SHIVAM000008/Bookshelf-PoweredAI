@@ -7,6 +7,7 @@ const navigation = [
   { id: "bookshelf", label: "My Bookshelf", icon: "▤" },
   { id: "discover", label: "Discover Books", icon: "⌕" },
   { id: "recommendations", label: "Recommendations", icon: "✧" },
+  { id: "profile", label: "Profile", icon: "◉" },
 ];
 
 function readSavedTheme() {
@@ -27,6 +28,28 @@ function readSavedSidebarState() {
   }
 }
 
+function BookLogo() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="25"
+      height="25"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 7.5C9.5 5.7 6.3 5.2 3 6v12c3.3-.8 6.5-.3 9 1.5" />
+      <path d="M12 7.5C14.5 5.7 17.7 5.2 21 6v12c-3.3-.8-6.5-.3-9 1.5" />
+      <path d="M12 7.5v12" />
+      <path d="M6 9.2c1.5-.2 2.8.1 4 .7" />
+      <path d="M18 9.2c-1.5-.2-2.8.1-4 .7" />
+    </svg>
+  );
+}
+
 export default function AppShell({
   user,
   onLogout,
@@ -42,8 +65,7 @@ export default function AppShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     readSavedSidebarState
   );
-  const [recommendationMode, setRecommendationMode] =
-    useState("content");
+  const [recommendationMode, setRecommendationMode] = useState("content");
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -70,9 +92,7 @@ export default function AppShell({
     if (!mobileMenuOpen) return undefined;
 
     function handleKeyDown(event) {
-      if (event.key === "Escape") {
-        setMobileMenuOpen(false);
-      }
+      if (event.key === "Escape") setMobileMenuOpen(false);
     }
 
     window.addEventListener("keydown", handleKeyDown);
@@ -95,9 +115,7 @@ export default function AppShell({
   );
 
   return (
-    <div
-      className={`bs-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}
-    >
+    <div className={`bs-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
       <button
         className="bs-mobile-menu"
         type="button"
@@ -129,7 +147,9 @@ export default function AppShell({
           onClick={() => navigateTo("overview")}
           aria-label="Go to Bookshelf overview"
         >
-          <span className="bs-brand-mark">B</span>
+          <span className="bs-brand-mark">
+            <BookLogo />
+          </span>
 
           <span className="bs-brand-copy">
             <strong>Bookshelf</strong>
@@ -160,7 +180,6 @@ export default function AppShell({
         </nav>
 
         <div className="bs-sidebar-bottom">
-          {/* The duplicate AI promo card is intentionally removed. */}
           <div className="bs-user">
             <div className="bs-avatar" aria-hidden="true">
               {displayName.charAt(0).toUpperCase()}
@@ -179,7 +198,8 @@ export default function AppShell({
                 aria-label="Log out"
                 title="Log out"
               >
-                ↗
+                <span aria-hidden="true">↗</span>
+                <span>Logout</span>
               </button>
             )}
           </div>
@@ -198,9 +218,7 @@ export default function AppShell({
               }}
               aria-expanded={!sidebarCollapsed}
               aria-controls="bs-sidebar"
-              aria-label={
-                sidebarCollapsed ? "Show sidebar" : "Hide sidebar"
-              }
+              aria-label={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
               title={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
             >
               <span aria-hidden="true">
@@ -229,12 +247,8 @@ export default function AppShell({
                   current === "dark" ? "light" : "dark"
                 )
               }
-              aria-label={`Switch to ${
-                theme === "dark" ? "light" : "dark"
-              } mode`}
-              title={`Switch to ${
-                theme === "dark" ? "light" : "dark"
-              } mode`}
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+              title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             >
               <span aria-hidden="true">
                 {theme === "dark" ? "☼" : "☾"}
@@ -252,9 +266,7 @@ export default function AppShell({
                 aria-labelledby="bs-welcome-title"
               >
                 <div className="bs-welcome-copy">
-                  <span className="bs-eyebrow">
-                    YOUR PERSONAL LIBRARY
-                  </span>
+                  <span className="bs-eyebrow">YOUR PERSONAL LIBRARY</span>
 
                   <h1 id="bs-welcome-title">
                     A world of books,
@@ -319,21 +331,21 @@ export default function AppShell({
                 aria-labelledby="bs-bookshelf-title"
               >
                 <div className="bs-section-heading">
-  <div>
-    <h1 id="bs-bookshelf-title">My Bookshelf</h1>
-    <p className="bs-page-description">
-  Your saved books and reading progress.
-</p>
-  </div>
+                  <div>
+                    <h1 id="bs-bookshelf-title">My Bookshelf</h1>
+                    <p className="bs-page-description">
+                      Your saved books and reading progress.
+                    </p>
+                  </div>
 
-  <button
-    className="bs-text-button"
-    type="button"
-    onClick={() => navigateTo("discover")}
-  >
-    Find books <span aria-hidden="true">→</span>
-  </button>
-</div>
+                  <button
+                    className="bs-text-button"
+                    type="button"
+                    onClick={() => navigateTo("discover")}
+                  >
+                    Find books <span aria-hidden="true">→</span>
+                  </button>
+                </div>
 
                 <div className="bs-feature-content">{bookshelf}</div>
               </section>
@@ -345,11 +357,13 @@ export default function AppShell({
                 aria-labelledby="bs-discover-title"
               >
                 <div className="bs-section-heading">
-  <div>
-    <h1 id="bs-discover-title">Discover Books</h1>
-    <p className="bs-page-description">Search the catalog for your next great read.</p>
-  </div>
-</div>
+                  <div>
+                    <h1 id="bs-discover-title">Discover Books</h1>
+                    <p className="bs-page-description">
+                      Search the catalog for your next great read.
+                    </p>
+                  </div>
+                </div>
 
                 <div className="bs-feature-content">{discover}</div>
               </section>
@@ -361,11 +375,15 @@ export default function AppShell({
                 aria-labelledby="bs-recommendations-title"
               >
                 <div className="bs-section-heading">
-  <div>
-    <h1 id="bs-recommendations-title">Your Recommendations</h1>
-    <p className="bs-page-description">Explore personalized picks and AI-generated book ideas.</p>
-  </div>
-</div>
+                  <div>
+                    <h1 id="bs-recommendations-title">
+                      Your Recommendations
+                    </h1>
+                    <p className="bs-page-description">
+                      Explore personalized picks and AI-generated book ideas.
+                    </p>
+                  </div>
+                </div>
 
                 <div
                   className="bs-segmented"
@@ -401,6 +419,56 @@ export default function AppShell({
                   {recommendationMode === "content"
                     ? contentRecommendations
                     : aiRecommendations}
+                </div>
+              </section>
+            )}
+
+            {activePage === "profile" && (
+              <section
+                className="bs-page bs-section"
+                aria-labelledby="bs-profile-title"
+              >
+                <div className="bs-section-heading">
+                  <div>
+                    <h1 id="bs-profile-title">My Profile</h1>
+                    <p className="bs-page-description">
+                      Your Bookshelf PoweredAI account details.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bs-feature-content">
+                  <div className="bs-user">
+                    <div className="bs-avatar" aria-hidden="true">
+                      {displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="bs-user-copy">
+                      <strong>{displayName}</strong>
+                      <small>Bookshelf reader</small>
+                    </div>
+                  </div>
+
+                  <div className="bs-profile-details">
+                    <div>
+                      <span>Full name</span>
+                      <strong>{user?.name || "Not provided"}</strong>
+                    </div>
+                    <div>
+                      <span>Email address</span>
+                      <strong>{user?.email || "Not provided"}</strong>
+                    </div>
+                    {user?.username && (
+                      <div>
+                        <span>Username</span>
+                        <strong>{user.username}</strong>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="bs-page-description">
+                    Your account details are displayed here. Passwords and
+                    other authentication secrets are never shown.
+                  </p>
                 </div>
               </section>
             )}
