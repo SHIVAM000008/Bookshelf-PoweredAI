@@ -12,6 +12,12 @@ export default function DiscoverBooks({ onBookAdded }) {
   const [addingKey, setAddingKey] = useState("");
   const [success, setSuccess] = useState("");
 
+  function getBookKey(book, index = 0) {
+    return `${book.catalogProvider || "openlibrary"}:${
+      book.catalogId || book.openLibraryKey || `${book.title}-${index}`
+    }`;
+  }
+
   async function handleSearch(event) {
     event.preventDefault();
 
@@ -42,9 +48,11 @@ export default function DiscoverBooks({ onBookAdded }) {
   }
 
   async function handleAddBook(book) {
+    const bookKey = getBookKey(book);
+
     if (addingKey) return;
 
-    setAddingKey(book.openLibraryKey);
+    setAddingKey(bookKey);
     setError("");
     setSuccess("");
 
@@ -58,12 +66,19 @@ export default function DiscoverBooks({ onBookAdded }) {
           status: "Want to Read",
           description: "",
           coverUrl: book.coverUrl || "",
-          openLibraryKey: book.openLibraryKey,
+          openLibraryKey: book.openLibraryKey || "",
+          catalogProvider: book.catalogProvider || "",
+          catalogId: book.catalogId || "",
         }),
       });
 
       onBookAdded?.(data.book);
-      setSuccess(`"${book.title}" added to your bookshelf!`);
+
+      setSuccess(
+        data.alreadySaved
+          ? `"${book.title}" is already on your bookshelf.`
+          : `"${book.title}" added to your bookshelf!`
+      );
     } catch (err) {
       setError(err.message || "Could not add this book.");
     } finally {
@@ -101,45 +116,54 @@ export default function DiscoverBooks({ onBookAdded }) {
         </p>
       )}
 
-      {loading && <p role="status">Searching the catalog...</p>}
+      {loading && <p role="status">Searching book catalogs...</p>}
 
       {!loading && searched && !error && results.length === 0 && (
         <p>No books found. Try another search.</p>
       )}
 
       <div className="catalog-grid">
-        {results.map((book, index) => (
-          <article
-            className="catalog-card"
-            key={`${book.openLibraryKey}-${index}`}
-          >
-            {book.coverUrl ? (
-              <img
-                src={book.coverUrl}
-                alt={`Cover of ${book.title}`}
-                loading="lazy"
-              />
-            ) : (
-              <div className="cover-placeholder">
-                No cover available
-              </div>
-            )}
+        {results.map((book, index) => {
+          const bookKey = getBookKey(book, index);
 
-            <h3>{book.title}</h3>
-            <p>By {book.author}</p>
-            <p>Published: {book.firstPublishYear || "Unknown"}</p>
+          return (
+            <article className="catalog-card" key={bookKey}>
+              {book.coverUrl ? (
+                <img
+                  src={book.coverUrl}
+                  alt={`Cover of ${book.title}`}
+                  loading="lazy"
+                />
+              ) : (
+                <div className="cover-placeholder">
+                  No cover available
+                </div>
+              )}
 
-            <button
-              type="button"
-              onClick={() => handleAddBook(book)}
-              disabled={Boolean(addingKey)}
-            >
-              {addingKey === book.openLibraryKey
-                ? "Adding..."
-                : "Add to My Bookshelf"}
-            </button>
-          </article>
-        ))}
+              <h3>{book.title}</h3>
+              <p>By {book.author}</p>
+              <p>
+                Published: {book.firstPublishYear || "Unknown"}
+              </p>
+              <p className="catalog-source">
+                Source:{" "}
+                {book.catalogProvider === "googlebooks"
+                  ? "Google Books"
+                  : "Open Library"}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => handleAddBook(book)}
+                disabled={Boolean(addingKey)}
+              >
+                {addingKey === bookKey
+                  ? "Adding..."
+                  : "Add to My Bookshelf"}
+              </button>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

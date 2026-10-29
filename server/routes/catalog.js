@@ -1,10 +1,11 @@
 
 const express = require("express");
 const { protect } = require("../middleware/auth");
+const { searchBookCatalog } = require("../services/bookCatalog");
 
 const router = express.Router();
 
-// GET /api/catalog/search?q=atomic habits
+// GET /api/catalog/search?q=atomic%20habits
 router.get("/search", protect, async (req, res) => {
   try {
     const query = req.query.q;
@@ -12,51 +13,21 @@ router.get("/search", protect, async (req, res) => {
     if (
       typeof query !== "string" ||
       query.trim().length < 2 ||
-      query.length > 100
+      query.trim().length > 100
     ) {
       return res.status(400).json({
         message: "Search must contain 2 to 100 characters",
       });
     }
 
-    const params = new URLSearchParams({
-      q: query.trim(),
-      limit: "12",
-      fields:
-        "key,title,author_name,first_publish_year,cover_i",
-    });
+    const books = await searchBookCatalog(query.trim(), 12);
 
-    const response = await fetch(
-      `https://openlibrary.org/search.json?${params}`,
-      { signal: AbortSignal.timeout(10000) }
-    );
-
-    if (!response.ok) {
-      return res.status(502).json({
-        message: "Book catalog is temporarily unavailable",
-      });
-    }
-
-    const data = await response.json();
-
-    const books = (data.docs || []).map((book) => ({
-      openLibraryKey: book.key,
-      title: book.title,
-      author: book.author_name?.[0] || "Unknown author",
-      firstPublishYear: book.first_publish_year || null,
-      coverUrl: book.cover_i
-        ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
-        : "",
-    }));
-
-    return res.json({
-      books,
-    });
+    return res.status(200).json({ books });
   } catch (error) {
     console.error("Catalog search error:", error);
 
     return res.status(502).json({
-      message: "Could not retrieve books from Open Library",
+      message: "Book catalogs are temporarily unavailable",
     });
   }
 });

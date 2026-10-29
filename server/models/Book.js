@@ -51,6 +51,15 @@ const bookSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    catalogProvider: {
+      type: String,
+      enum: ["", "openlibrary", "googlebooks"],
+      default: "",
+    },
+    catalogId: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,

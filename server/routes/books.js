@@ -2,22 +2,16 @@
 const {
   uploadBookCover,
   saveCover,
-  deleteCover,
 } = require("../middleware/bookCoverUpload");
 const express = require("express");
 const mongoose = require("mongoose");
 const Book = require("../models/Book");
 const { protect } = require("../middleware/auth");
 
-
 const router = express.Router();
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function normalizeText(value) {
-  return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 // POST /api/books - Add a book to the logged-in user's bookshelf.
@@ -32,6 +26,8 @@ router.post("/", protect, uploadBookCover, async (req, res) => {
       description,
       coverUrl,
       openLibraryKey,
+      catalogProvider,
+      catalogId,
     } = req.body;
 
     if (
@@ -48,17 +44,29 @@ router.post("/", protect, uploadBookCover, async (req, res) => {
     const cleanTitle = title.trim();
     const cleanAuthor = author.trim();
     const cleanKey =
-      typeof openLibraryKey === "string"
-        ? openLibraryKey.trim()
+      typeof openLibraryKey === "string" ? openLibraryKey.trim() : "";
+    const cleanCatalogId =
+      typeof catalogId === "string" ? catalogId.trim() : "";
+
+    const allowedProviders = ["openlibrary", "googlebooks"];
+    const cleanProvider = allowedProviders.includes(catalogProvider)
+      ? catalogProvider
+      : cleanKey
+        ? "openlibrary"
         : "";
 
-    // Use the catalog identifier when available. Also compare normalized
-    // title + author so books entered manually can be detected as duplicates.
+    // Search by provider ID when available, and also by title + author
+    // to catch books added manually or through another catalog.
     const duplicateConditions = [];
 
     if (cleanKey) {
+      duplicateConditions.push({ openLibraryKey: cleanKey });
+    }
+
+    if (cleanProvider && cleanCatalogId) {
       duplicateConditions.push({
-        openLibraryKey: cleanKey,
+        catalogProvider: cleanProvider,
+        catalogId: cleanCatalogId,
       });
     }
 
@@ -73,7 +81,7 @@ router.post("/", protect, uploadBookCover, async (req, res) => {
       },
     });
 
-    let existingBook = await Book.findOne({
+    const existingBook = await Book.findOne({
       owner: req.user._id,
       $or: duplicateConditions,
     });
@@ -81,7 +89,6 @@ router.post("/", protect, uploadBookCover, async (req, res) => {
     if (existingBook) {
       let changed = false;
 
-      // Older saved records may not have had cover information.
       if (
         !existingBook.coverUrl &&
         typeof coverUrl === "string" &&
@@ -96,6 +103,19 @@ router.post("/", protect, uploadBookCover, async (req, res) => {
         changed = true;
       }
 
+      if (
+        !existingBook.catalogProvider &&
+        cleanProvider
+      ) {
+        existingBook.catalogProvider = cleanProvider;
+        changed = true;
+      }
+
+      if (!existingBook.catalogId && cleanCatalogId) {
+        existingBook.catalogId = cleanCatalogId;
+        changed = true;
+      }
+
       if (changed) {
         await existingBook.save();
       }
@@ -106,11 +126,13 @@ router.post("/", protect, uploadBookCover, async (req, res) => {
         alreadySaved: true,
       });
     }
-let uploadedCoverUrl = "";
 
-if (req.file) {
-  uploadedCoverUrl = await saveCover(req.file);
-}
+    let uploadedCoverUrl = "";
+
+    if (req.file) {
+      uploadedCoverUrl = await saveCover(req.file);
+    }
+
     const book = await Book.create({
       owner: req.user._id,
       title: cleanTitle,
@@ -118,10 +140,13 @@ if (req.file) {
       genre,
       status,
       description,
-      coverUrl: uploadedCoverUrl ||
-  (typeof coverUrl === "string" ? coverUrl.trim() : ""),
-coverType: uploadedCoverUrl ? "upload" : "external",
+      coverUrl:
+        uploadedCoverUrl ||
+        (typeof coverUrl === "string" ? coverUrl.trim() : ""),
+      coverType: uploadedCoverUrl ? "upload" : "external",
       openLibraryKey: cleanKey,
+      catalogProvider: cleanProvider,
+      catalogId: cleanCatalogId,
     });
 
     return res.status(201).json({
@@ -207,7 +232,7 @@ router.patch("/:id", protect, async (req, res) => {
         owner: req.user._id,
       },
       { $set: updates },
-      { returnDocument: "after" }
+      { returnDocument: "after", runValidators: true }
     );
 
     if (!book) {

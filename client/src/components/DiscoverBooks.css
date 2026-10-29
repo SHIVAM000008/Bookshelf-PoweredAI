@@ -1,3 +1,4 @@
+
 /* Discover Books — search form */
 .bs-app .discover-books .discover-search {
   display: flex;
@@ -38,11 +39,6 @@
 .bs-app .discover-books .discover-search button:hover:not(:disabled) {
   background: var(--brand-hover);
   border-color: var(--brand-hover);
-}
-
-.bs-app .discover-books .discover-search button:hover:not(:disabled) {
-  border-color: #650019;
-  background: #650019;
   box-shadow: 0 4px 12px rgb(128 0 32 / 18%);
 }
 
@@ -55,7 +51,6 @@
   cursor: wait;
 }
 
-/* Reduce unnecessary vertical spacing around search feedback. */
 .bs-app .discover-books .discover-search + .error,
 .bs-app .discover-books .discover-search + .success {
   margin-top: 8px;
@@ -67,7 +62,144 @@
   line-height: 1.5;
 }
 
-/* Keep the search controls comfortable on small screens. */
+/* Responsive book grid */
+.bs-app .discover-books .catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+  align-items: stretch;
+  margin-top: 20px;
+}
+
+/* Individual book card */
+.bs-app .discover-books .catalog-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.bs-app .discover-books .catalog-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 9%);
+}
+
+.bs-app .discover-books .catalog-card > img,
+.bs-app .discover-books .catalog-card > .cover-placeholder {
+  display: block;
+  width: 100%;
+  height: 220px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+}
+
+.bs-app .discover-books .catalog-card > img {
+  object-fit: contain;
+  background: var(--bg-card);
+}
+
+.bs-app .discover-books .catalog-card > .cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-strong);
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: center;
+}
+
+.bs-app .discover-books .catalog-card h3 {
+  margin: 0 0 8px;
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.bs-app .discover-books .catalog-card p {
+  margin: 0 0 7px;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.bs-app .discover-books .catalog-card .catalog-source {
+  margin-top: auto;
+  padding-top: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.bs-app .discover-books .catalog-card > button {
+  width: 100%;
+  min-height: 40px;
+  margin-top: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--brand-primary);
+  border-radius: 9px;
+  background: var(--brand-primary);
+  color: #fff;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.bs-app .discover-books .catalog-card > button:hover:not(:disabled) {
+  border-color: var(--brand-hover);
+  background: var(--brand-hover);
+}
+
+.bs-app .discover-books .catalog-card > button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* Smaller screens */
+@media (max-width: 600px) {
+  .bs-app .discover-books .catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .bs-app .discover-books .catalog-card {
+    padding: 10px;
+  }
+
+  .bs-app .discover-books .catalog-card > img,
+  .bs-app .discover-books .catalog-card > .cover-placeholder {
+    height: 180px;
+  }
+
+  .bs-app .discover-books .catalog-card h3 {
+    font-size: 14px;
+  }
+
+  .bs-app .discover-books .catalog-card > button {
+    padding: 8px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .bs-app .discover-books .catalog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bs-app .discover-books .catalog-card > img,
+  .bs-app .discover-books .catalog-card > .cover-placeholder {
+    height: 230px;
+  }
+}
+
 @media (max-width: 480px) {
   .bs-app .discover-books .discover-search {
     gap: 8px;
