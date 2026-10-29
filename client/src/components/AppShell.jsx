@@ -419,7 +419,7 @@ export default function AppShell({
                           fontSize: "12px",
                         }}
                       >
-                        Bookshelf reader
+                        Book Lover
                       </span>
                     </div>
                   </div>
