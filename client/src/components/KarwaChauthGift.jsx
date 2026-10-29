@@ -41,8 +41,8 @@ const fireworks = [
 
 export default function KarwaChauthGift() {
   const [visible, setVisible] = useState(() => {
-    return getIndiaDate() === GIFT_DATE && !wasDismissed();
-  });
+  return getIndiaDate() === GIFT_DATE;
+});
 
   const [expired, setExpired] = useState(false);
 
@@ -68,15 +68,11 @@ export default function KarwaChauthGift() {
     };
   }, []);
 
+  
   function closeGift() {
-    try {
-      localStorage.setItem(DISMISS_KEY, "true");
-    } catch {
-      // The close action still works if storage is unavailable.
-    }
-
     setVisible(false);
   }
+
 
   if (!visible || expired) return null;
 
