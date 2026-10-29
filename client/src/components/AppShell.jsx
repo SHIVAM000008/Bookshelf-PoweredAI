@@ -321,7 +321,9 @@ export default function AppShell({
                 <div className="bs-section-heading">
   <div>
     <h1 id="bs-bookshelf-title">My Bookshelf</h1>
-    <p>Your saved books and reading progress.</p>
+    <p className="bs-page-description">
+  Your saved books and reading progress.
+</p>
   </div>
 
   <button
@@ -345,7 +347,7 @@ export default function AppShell({
                 <div className="bs-section-heading">
   <div>
     <h1 id="bs-discover-title">Discover Books</h1>
-    <p>Search the catalog for your next great read.</p>
+    <p className="bs-page-description">Search the catalog for your next great read.</p>
   </div>
 </div>
 
@@ -361,7 +363,7 @@ export default function AppShell({
                 <div className="bs-section-heading">
   <div>
     <h1 id="bs-recommendations-title">Your Recommendations</h1>
-    <p>Explore personalized picks and AI-generated book ideas.</p>
+    <p className="bs-page-description">Explore personalized picks and AI-generated book ideas.</p>
   </div>
 </div>
 
@@ -405,7 +407,6 @@ export default function AppShell({
 
             <footer className="bs-footer">
               <span>Bookshelf PoweredAI</span>
-              <span>Your next chapter starts here.</span>
             </footer>
           </div>
 

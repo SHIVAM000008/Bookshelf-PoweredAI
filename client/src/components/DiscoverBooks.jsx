@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { apiRequest } from "../lib/api";
+import "./DiscoverBooks.css";
 
 export default function DiscoverBooks({ onBookAdded }) {
   const [query, setQuery] = useState("");

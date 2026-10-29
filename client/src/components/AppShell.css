@@ -428,7 +428,7 @@
 }
 
 .bs-page-heading h1 {
-  margin: 8px 0 9px;
+  margin: 0 0 4px;
   color: var(--text-primary);
   font-family: "Playfair Display", Georgia, serif;
   font-size: clamp(27px, 3vw, 36px);
@@ -1111,11 +1111,11 @@
   }
 
   .bs-page-heading {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 14px;
-    margin-bottom: 20px;
-  }
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 20px;
+}
 
   .bs-page-heading h1 {
     font-size: 29px;
@@ -1407,6 +1407,136 @@
   color: var(--text-secondary);
   font-size: 0.95rem;
   line-height: 1.5;
-  margin: 0.35rem 0 0;
+  margin: 0.25rem 0 0;
   font-weight: 400;
+}
+/* Fix excessive spacing between page title and description */
+.bs-app .bs-page-heading {
+  align-items: flex-start;
+  row-gap: 4px !important;
+}
+
+.bs-app .bs-page-heading h1 {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.bs-app .bs-page-heading p {
+  margin-top: 0 !important;
+  line-height: 1.5;
+}
+/* Page title and description spacing */
+.bs-app .bs-section-heading {
+  margin: 0 0 12px;
+}
+
+.bs-app .bs-section-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bs-app .bs-section-heading h1 {
+  margin: 0;
+  line-height: 1.2;
+}
+
+.bs-app .bs-section-heading .bs-page-description {
+  margin: 0;
+  line-height: 1.5;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 680px) {
+  .bs-app .bs-section-heading {
+    margin-bottom: 20px;
+  }
+
+  .bs-app .bs-section-heading > div {
+    gap: 4px;
+  }
+}
+.bs-content-column {
+  min-height: calc(100vh - 113px);
+}
+
+.bs-footer {
+  margin-top: auto;
+  padding: 18px 0 8px;
+}
+
+@media (max-width: 680px) {
+  .bs-content-column {
+    min-height: calc(100vh - 100px);
+  }
+}
+
+/* Keep the footer at the bottom when page content is short */
+/* =========================================================
+   FOOTER POSITION FIX
+========================================================= */
+
+/* Keep the app at least as tall as the viewport */
+.bs-app {
+  min-height: 100vh;
+}
+
+/* Main area fills the available viewport height */
+.bs-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+}
+
+/* Let the workspace expand vertically */
+.bs-workspace {
+  flex: 1;
+  align-items: stretch;
+  min-height: 0;
+}
+
+/* Stretch the content column to the workspace height */
+.bs-content-column {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Push the footer down when page content is short */
+.bs-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding: 18px 0 8px;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+/* Mobile layout */
+@media (max-width: 680px) {
+  .bs-main {
+    min-height: 100vh;
+  }
+
+  .bs-workspace {
+    flex: 1;
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .bs-content-column {
+    min-height: 0;
+  }
+
+  .bs-footer {
+    flex-direction: column;
+    overflow-wrap: anywhere;
+  }
 }

@@ -1,0 +1,86 @@
+/* Discover Books — search form */
+.bs-app .discover-books .discover-search {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.bs-app .discover-books .discover-search input {
+  flex: 1;
+  min-width: 0;
+  min-height: 46px;
+  margin: 0;
+  padding: 11px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 13px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.bs-app .discover-books .discover-search input:focus {
+  border-color: #800020;
+  box-shadow: 0 0 0 3px rgb(128 0 32 / 12%);
+  outline: none;
+}
+
+/* Search button — follows the active theme */
+.bs-app .discover-books .discover-search button {
+  background: var(--brand-primary);
+  color: #fff;
+  border: 1px solid var(--brand-primary);
+  border-radius: 9px;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.bs-app .discover-books .discover-search button:hover:not(:disabled) {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+}
+
+.bs-app .discover-books .discover-search button:hover:not(:disabled) {
+  border-color: #650019;
+  background: #650019;
+  box-shadow: 0 4px 12px rgb(128 0 32 / 18%);
+}
+
+.bs-app .discover-books .discover-search button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.bs-app .discover-books .discover-search button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* Reduce unnecessary vertical spacing around search feedback. */
+.bs-app .discover-books .discover-search + .error,
+.bs-app .discover-books .discover-search + .success {
+  margin-top: 8px;
+}
+
+.bs-app .discover-books > p {
+  margin-top: 8px;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+/* Keep the search controls comfortable on small screens. */
+@media (max-width: 480px) {
+  .bs-app .discover-books .discover-search {
+    gap: 8px;
+  }
+
+  .bs-app .discover-books .discover-search input {
+    min-height: 43px;
+    padding: 10px;
+  }
+
+  .bs-app .discover-books .discover-search button {
+    min-width: 82px;
+    min-height: 43px;
+    padding: 10px 13px;
+  }
+}
