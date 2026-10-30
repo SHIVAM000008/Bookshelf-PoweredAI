@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./AppShell.css";
 import "./AppShell.responsive.css";
+import "./AppShell.resize.css";
 import KarwaChauthGift from "./KarwaChauthGift";
 
 const navigation = [
@@ -75,12 +76,14 @@ export default function AppShell({
   // Floating AI Assistant state
   const assistantPanelRef = useRef(null);
   const assistantDragRef = useRef(null);
+  const assistantResizeRef = useRef(null);
   const assistantLauncherRef = useRef(null);
   const launcherDragRef = useRef(null);
   const suppressLauncherClickRef = useRef(false);
 
   const [assistantMinimized, setAssistantMinimized] = useState(false);
   const [assistantPosition, setAssistantPosition] = useState(null);
+  const [assistantSize, setAssistantSize] = useState(null);
   const [launcherPosition, setLauncherPosition] = useState(null);
 
   // Start dragging from the assistant header.
@@ -150,6 +153,59 @@ export default function AppShell({
     ) {
       assistantDragRef.current = null;
     }
+  }
+
+  // Resize the floating assistant from its lower-right corner.
+  function startAssistantResize(event) {
+    if (event.button !== 0 || window.matchMedia("(max-width: 680px)").matches) return;
+    const panel = assistantPanelRef.current;
+    if (!panel) return;
+    const rect = panel.getBoundingClientRect();
+    assistantResizeRef.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    };
+    setAssistantPosition({ left: rect.left, top: rect.top });
+    setAssistantSize({ width: rect.width, height: rect.height });
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  function moveAssistantResize(event) {
+    const drag = assistantResizeRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const maxWidth = Math.max(220, window.innerWidth - drag.left - 8);
+    const maxHeight = Math.max(240, window.innerHeight - drag.top - 8);
+    setAssistantSize({
+      width: Math.min(maxWidth, Math.max(Math.min(300, maxWidth), drag.width + event.clientX - drag.x)),
+      height: Math.min(maxHeight, Math.max(Math.min(320, maxHeight), drag.height + event.clientY - drag.y)),
+    });
+  }
+
+  function stopAssistantResize(event) {
+    if (assistantResizeRef.current?.pointerId === event.pointerId) {
+      assistantResizeRef.current = null;
+    }
+  }
+
+  function resizeAssistantWithKeyboard(event) {
+    const steps = { ArrowRight: [32, 0], ArrowLeft: [-32, 0], ArrowDown: [0, 32], ArrowUp: [0, -32] };
+    if (!steps[event.key] || window.matchMedia("(max-width: 680px)").matches) return;
+    event.preventDefault();
+    const panel = assistantPanelRef.current;
+    if (!panel) return;
+    const rect = panel.getBoundingClientRect();
+    const [dx, dy] = steps[event.key];
+    setAssistantPosition({ left: rect.left, top: rect.top });
+    setAssistantSize({
+      width: Math.min(window.innerWidth - rect.left - 8, Math.max(220, rect.width + dx)),
+      height: Math.min(window.innerHeight - rect.top - 8, Math.max(240, rect.height + dy)),
+    });
   }
 
   // Drag the minimized launcher without triggering its open action.
@@ -1035,8 +1091,9 @@ export default function AppShell({
                     top: `${assistantPosition.top}px`,
                     right: "auto",
                     bottom: "auto",
+                    ...(assistantSize || {}),
                   }
-                : undefined
+                : assistantSize || undefined
             }
             aria-label="AI research assistant"
           >
@@ -1079,6 +1136,21 @@ export default function AppShell({
               </p>
 
               {researchAssistant}
+            </div>
+            <div
+              className="bs-assistant-resize-handle"
+              role="separator"
+              aria-label="Resize AI Assistant; use arrow keys or drag"
+              aria-orientation="horizontal"
+              tabIndex={0}
+              title="Drag to resize AI Assistant (arrow keys also work)"
+              onPointerDown={startAssistantResize}
+              onPointerMove={moveAssistantResize}
+              onPointerUp={stopAssistantResize}
+              onPointerCancel={stopAssistantResize}
+              onKeyDown={resizeAssistantWithKeyboard}
+            >
+              <span aria-hidden="true">◢</span>
             </div>
           </aside>
         </div>
