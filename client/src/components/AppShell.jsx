@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import "./AppShell.css";
 import "./AppShell.responsive.css";
 import "./AppShell.resize.css";
-import KarwaChauthGift from "./KarwaChauthGift";
+import "./AppShell.mobile.css";
 
 const navigation = [
   { id: "overview", label: "Overview", icon: "⌂" },
@@ -919,6 +919,7 @@ export default function AppShell({
                     >
                       View recommendations
                     </button>
+                    <button className="bs-button bs-button-secondary bs-mobile-ai-shortcut" type="button" onClick={() => navigateTo("assistant")}>✧ AI Assistant</button>
                   </div>
                 </div>
 
