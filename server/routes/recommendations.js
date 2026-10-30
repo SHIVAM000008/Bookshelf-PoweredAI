@@ -81,6 +81,15 @@ router.post('/ai', protect, async (req, res) => {
     const { candidates, successfulSearches } = await fetchCandidates(preferences, savedBooks, { limit: 15 });
     if (!successfulSearches) return res.status(502).json({ message: 'Book catalogs are temporarily unavailable. Please try again.' });
     const candidateList = candidates.slice(0, 35);
+    console.log('AI recommendation candidates:', {
+  total: candidates.length,
+  selected: candidateList.length,
+  providers: candidateList.reduce((counts, book) => {
+    const provider = book.catalogProvider || 'unknown';
+    counts[provider] = (counts[provider] || 0) + 1;
+    return counts;
+  }, {}),
+});
     if (!candidateList.length) return res.json({ basedOn, recommendations: [], message: 'No suitable book candidates found.' });
     try {
       const messages = [
