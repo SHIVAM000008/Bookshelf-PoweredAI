@@ -5,7 +5,7 @@ const { generateAIResponse } = require('../services/aiProviders');
 const { getPreferredGenres, getSearchSignals, fetchCandidates } = require('../services/recommendationCandidates');
 
 const router = express.Router();
-const RECOMMENDATION_LIMIT = 10;
+const AI_RANKING_BATCH = 35;
 const identity = (book) => `${book.catalogProvider}:${book.catalogId}`;
 
 async function loadRecommendations(req) {
@@ -17,11 +17,10 @@ async function loadRecommendations(req) {
   return { savedBooks, preferences, signals, basedOn };
 }
 
-function fillRecommendations(selected, candidates, count = RECOMMENDATION_LIMIT) {
+function fillRecommendations(selected, candidates) {
   const results = [...selected];
   const used = new Set(results.map(identity));
   for (const book of candidates) {
-    if (results.length >= count) break;
     if (used.has(identity(book))) continue;
     used.add(identity(book));
     results.push(book);
@@ -29,9 +28,7 @@ function fillRecommendations(selected, candidates, count = RECOMMENDATION_LIMIT)
   return results;
 }
 
-// Model indices are 1-based and refer only to the candidate array we supplied.
-// This eliminates hallucinated catalog IDs and verbose JSON explanations.
-function parseRanking(content, candidates, count = RECOMMENDATION_LIMIT) {
+function parseRanking(content, candidates) {
   if (typeof content !== 'string') throw new Error('AI ranking response is not text');
   const start = content.indexOf('{');
   const end = content.lastIndexOf('}');
@@ -44,7 +41,6 @@ function parseRanking(content, candidates, count = RECOMMENDATION_LIMIT) {
     if (!Number.isInteger(index) || index < 1 || index > candidates.length || seen.has(index)) continue;
     seen.add(index);
     books.push(candidates[index - 1]);
-    if (books.length >= count) break;
   }
   if (!books.length) throw new Error('AI selected no valid catalog candidates');
   return books;
@@ -66,7 +62,7 @@ router.get('/', protect, async (req, res) => {
     if (!signals.length) return res.json({ basedOn, recommendations: [], message: 'Add books to your bookshelf to get recommendations.' });
     const { candidates, successfulSearches } = await fetchCandidates(preferences, savedBooks);
     if (!successfulSearches) return res.status(502).json({ message: 'Book catalogs are temporarily unavailable. Please try again.' });
-    return res.json({ basedOn, recommendations: candidates.slice(0, RECOMMENDATION_LIMIT),
+    return res.json({ basedOn, recommendations: candidates,
       message: candidates.length ? undefined : 'No new matching books found.' });
   } catch (error) {
     console.error('Recommendation error:', error.message);
@@ -80,17 +76,10 @@ router.post('/ai', protect, async (req, res) => {
     if (!signals.length) return res.json({ basedOn, recommendations: [], message: 'Add books to your bookshelf to get AI recommendations.' });
     const { candidates, successfulSearches } = await fetchCandidates(preferences, savedBooks, { limit: 15 });
     if (!successfulSearches) return res.status(502).json({ message: 'Book catalogs are temporarily unavailable. Please try again.' });
-    const candidateList = candidates.slice(0, 35);
-    console.log('AI recommendation candidates:', {
-  total: candidates.length,
-  selected: candidateList.length,
-  providers: candidateList.reduce((counts, book) => {
-    const provider = book.catalogProvider || 'unknown';
-    counts[provider] = (counts[provider] || 0) + 1;
-    return counts;
-  }, {}),
-});
-    if (!candidateList.length) return res.json({ basedOn, recommendations: [], message: 'No suitable book candidates found.' });
+    if (!candidates.length) return res.json({ basedOn, recommendations: [], message: 'No suitable book candidates found.' });
+
+    // AI ranks a bounded sample, but the response includes every catalog candidate.
+    const rankingCandidates = candidates.slice(0, AI_RANKING_BATCH);
     try {
       const messages = [
         { role: 'system', content: [
@@ -102,15 +91,14 @@ router.post('/ai', protect, async (req, res) => {
         { role: 'user', content: JSON.stringify({
           preferredGenres: preferences.map((item) => item.name),
           bookshelf: savedBooks.slice(0, 12).map((book) => ({ title: book.title, author: book.author, genre: book.genre, status: book.status })),
-          candidates: candidateList.map((book, i) => ({ n: i + 1, title: book.title, author: book.author, genre: book.genre }))
+          candidates: rankingCandidates.map((book, i) => ({ n: i + 1, title: book.title, author: book.author, genre: book.genre }))
         }) },
       ];
-      const { selected, model } = await rankWithAI(messages, candidateList);
-      return res.json({ basedOn, model,
-        recommendations: fillRecommendations(selected, candidateList), fallback: false });
+      const { selected, model } = await rankWithAI(messages, rankingCandidates);
+      return res.json({ basedOn, model, recommendations: fillRecommendations(selected, candidates), fallback: false });
     } catch (error) {
       console.warn('AI ranking unavailable; returning catalog-based picks:', error.message);
-      return res.json({ basedOn, recommendations: candidateList.slice(0, RECOMMENDATION_LIMIT), fallback: true,
+      return res.json({ basedOn, recommendations: candidates, fallback: true,
         message: 'AI ranking is temporarily unavailable. Showing catalog-based picks instead.' });
     }
   } catch (error) {

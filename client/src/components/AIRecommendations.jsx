@@ -15,7 +15,7 @@ export default function AIRecommendations({ onBookAdded }) {
     setLoading(true); setError(''); setMessage('');
     try {
       const data = await apiRequest('/recommendations/ai', { method:'POST' });
-      setRecommendations((data.recommendations || []).slice(0, 10));
+      setRecommendations(data.recommendations || []);
       setBasedOn(data.basedOn || []); setMessage(data.message || '');
     } catch (err) { setError(err.message || 'Could not generate AI recommendations.'); }
     finally { setLoading(false); }
@@ -44,6 +44,7 @@ export default function AIRecommendations({ onBookAdded }) {
     {error && <p className="ai-error" role="alert">{error}</p>}
     {message && <p className="ai-status" role="status">{message}</p>}
     {basedOn.length > 0 && recommendations.length > 0 && <p className="ai-preferences"><strong>Based on:</strong> {basedOn.join(', ')}</p>}
+    {!loading && recommendations.length > 0 && <p className="ai-status">Showing {recommendations.length} available recommendations.</p>}
     <div className="ai-recommendations-grid">{recommendations.map((book) =>
       <RecommendationBookCard key={getBookIdentity(book)} book={book} onAdd={handleAddBook}
         isAdding={addingKey === getBookIdentity(book)} disabled={Boolean(addingKey)} />)}</div>

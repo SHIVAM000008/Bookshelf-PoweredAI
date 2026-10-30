@@ -9,21 +9,6 @@ function isSameBook(a, b) {
     (a.catalogProvider && a.catalogId && a.catalogProvider === b.catalogProvider && a.catalogId === b.catalogId) ||
     (normalize(a.title) === normalize(b.title) && normalize(a.author) === normalize(b.author)));
 }
-function chooseVisible(books) {
-  const visible = books.slice(0, 10);
-  if (visible.length < 10) return visible;
-  const represented = new Set(visible.map((book) => book.catalogProvider));
-  for (const provider of ['openlibrary', 'googlebooks']) {
-    if (represented.has(provider)) continue;
-    const candidate = books.slice(10).find((book) => book.catalogProvider === provider &&
-      (book.relevanceScore || 0) >= (visible[9].relevanceScore || 0) - 12);
-    if (candidate) {
-      visible[9] = candidate;
-      visible.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
-    }
-  }
-  return visible;
-}
 export default function DiscoverBooks({ onBookAdded }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -41,7 +26,7 @@ export default function DiscoverBooks({ onBookAdded }) {
       const [catalog, shelf] = await Promise.all([
         apiRequest(`/catalog/search?q=${encodeURIComponent(term)}`), apiRequest('/books'),
       ]);
-      setResults(chooseVisible((catalog.books || []).filter((book) => !(shelf.books || []).some((saved) => isSameBook(book, saved)))));
+      setResults((catalog.books || []).filter((book) => !(shelf.books || []).some((saved) => isSameBook(book, saved))));
     } catch (err) { setError(err.message || 'Could not search the catalog.'); }
     finally { setLoading(false); }
   }
@@ -72,6 +57,7 @@ export default function DiscoverBooks({ onBookAdded }) {
     {success && <p className="success" role="status">{success}</p>}
     {loading && <p role="status">Searching both book catalogs...</p>}
     {!loading && searched && !error && !results.length && <p>No new books found.</p>}
+    {!loading && results.length > 0 && <p role="status">Showing {results.length} available books.</p>}
     <div className="catalog-grid">{results.map((book) => <UnifiedBookCard key={getBookIdentity(book)} book={book}
       onAdd={handleAddBook} adding={addingKey === getBookIdentity(book)} disabled={Boolean(addingKey)} />)}</div>
   </section>;

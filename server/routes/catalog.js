@@ -2,13 +2,14 @@ const express = require('express');
 const { protect } = require('../middleware/auth');
 const { searchBookCatalog } = require('../services/bookCatalog');
 const router = express.Router();
+
 router.get('/search', protect, async (req, res) => {
   try {
     const query = req.query.q;
     if (typeof query !== 'string' || query.trim().length < 2 || query.trim().length > 100)
       return res.status(400).json({ message: 'Search must contain 2 to 100 characters' });
-    // Fetch more than the display limit: saved-book filtering happens in the client.
-    const books = await searchBookCatalog(query.trim(), 30);
+    // Search both catalogs at their supported per-request sizes.
+    const books = await searchBookCatalog(query.trim(), 80);
     return res.status(200).json({ books });
   } catch (error) {
     console.error('Catalog search error:', error);

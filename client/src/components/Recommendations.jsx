@@ -19,7 +19,7 @@ export default function Recommendations({ onBookAdded }) {
     try {
       const data = await apiRequest('/recommendations', { signal });
       if (!mountedRef.current || id !== requestIdRef.current || signal?.aborted) return;
-      setRecommendations((data.recommendations || []).slice(0, 10));
+      setRecommendations(data.recommendations || []);
       setBasedOn(data.basedOn || []); setMessage(data.message || '');
     } catch (err) {
       if (!signal?.aborted && mountedRef.current && id === requestIdRef.current) setError(err.message || 'Could not load recommendations.');
@@ -51,6 +51,7 @@ export default function Recommendations({ onBookAdded }) {
     {error && <p className="ai-error" role="alert">{error}</p>}
     {message && <p className="ai-status" role="status">{message}</p>}
     {!loading && !error && !recommendations.length && !message && <p className="ai-status">No new recommendations found.</p>}
+    {!loading && recommendations.length > 0 && <p className="ai-status">Showing {recommendations.length} available recommendations.</p>}
     <div className="ai-recommendations-grid">{recommendations.map((book) =>
       <RecommendationBookCard key={getBookIdentity(book)} book={book} onAdd={handleAddBook}
         isAdding={addingKey === getBookIdentity(book)} disabled={Boolean(addingKey)} />)}</div>

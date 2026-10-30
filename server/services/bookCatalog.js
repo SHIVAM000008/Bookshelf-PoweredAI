@@ -24,7 +24,6 @@ function deduplicateBooks(books) {
     if (!previous) { map.set(key, book); continue; }
     const quality = (item) => Number(Boolean(item.coverUrl)) + Number(Boolean(item.genre)) + Number(Boolean(item.description));
     const winner = quality(book) > quality(previous) ? book : previous;
-    // Provider identity and link must always come from the same winning record.
     map.set(key, { ...winner, genre: winner.genre || book.genre || previous.genre || '',
       description: winner.description || book.description || previous.description || '' });
   }
@@ -33,8 +32,6 @@ function deduplicateBooks(books) {
 function selectRanked(books, query, limit) {
   const ranked = deduplicateBooks(books).map((book) => ({ book, rank: score(book, query) }))
     .sort((a, b) => b.rank - a.rank);
-  // The ranking is relevance-first. A provider is represented when its best eligible
-  // match is reasonably close to the last displayed match.
   const selected = ranked.slice(0, limit);
   const providers = new Set(selected.map((entry) => entry.book.catalogProvider));
   for (const provider of ['openlibrary', 'googlebooks']) {
@@ -45,13 +42,15 @@ function selectRanked(books, query, limit) {
   }
   return selected.map(({book, rank}) => ({ ...book, relevanceScore: rank }));
 }
-async function searchBookCatalog(query, limit = 20) {
+async function searchBookCatalog(query, limit = 80) {
   const clean = String(query || '').trim();
-  const count = Math.min(Math.max(Number(limit) || 20, 1), 40);
+  const count = Math.min(Math.max(Number(limit) || 80, 1), 80);
   const key = `${normalize(clean)}:${count}`;
   const cached = cache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.books;
-  const results = await Promise.allSettled([searchOpenLibrary(clean, count), searchGoogleBooks(clean, count)]);
+  // Each provider has its own supported page size; 80 is the combined target, not a provider limit.
+  const providerCount = Math.min(count, 40);
+  const results = await Promise.allSettled([searchOpenLibrary(clean, providerCount), searchGoogleBooks(clean, providerCount)]);
   if (results.every((r) => r.status === 'rejected')) throw new Error('All book catalog providers are unavailable');
   const books = selectRanked(results.filter((r) => r.status === 'fulfilled').flatMap((r) => r.value), clean, count);
   cache.set(key, { books, expiresAt: Date.now() + 60000 });
