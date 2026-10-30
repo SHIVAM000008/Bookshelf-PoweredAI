@@ -392,7 +392,6 @@ export default function AppShell({
         sidebarCollapsed ? " sidebar-collapsed" : ""
       }`}
     >
-      <KarwaChauthGift />
 
       {/* Mobile navigation button */}
       <button
