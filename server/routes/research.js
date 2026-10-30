@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 
 const ResearchChat = require("../models/ResearchChat");
 const { protect } = require("../middleware/auth");
-const { generateAIResponse } = require("../services/openrouter");
+const { generateAIResponse } = require("../services/aiProviders");
 
 const router = express.Router();
 

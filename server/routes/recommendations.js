@@ -1,7 +1,7 @@
 const express = require('express');
 const Book = require('../models/Book');
 const { protect } = require('../middleware/auth');
-const { generateAIResponse } = require('../services/openrouter');
+const { generateAIResponse } = require('../services/aiProviders');
 const { getPreferredGenres, getSearchSignals, fetchCandidates } = require('../services/recommendationCandidates');
 
 const router = express.Router();
@@ -50,40 +50,14 @@ function parseRanking(content, candidates, count = RECOMMENDATION_LIMIT) {
   return books;
 }
 
-function isRetryable(error) {
-  return error?.name === 'TimeoutError' || error?.name === 'AbortError' ||
-    error?.code === 'EMPTY_AI_RESPONSE' || error?.code === 'AI_OUTPUT_TRUNCATED' ||
-    error?.status === 408 || error?.status === 429 || error?.status >= 500;
-}
-
 async function rankWithAI(messages, candidates) {
-  // A single retry is permitted only for transient provider failures.
-  // A bounded total deadline prevents repeated requests from hanging indefinitely.
-  const deadline = Date.now() + 55000;
-  let lastError;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const remaining = deadline - Date.now();
-    if (remaining < 5000) break;
-    try {
-      const aiResult = await generateAIResponse(messages, {
-        model: 'google/gemma-4-26b-a4b-it:free',
-        maxTokens: 1200,
-        temperature: 0.2,
-        timeoutMs: Math.min(30000, remaining),
-      });
-      return { selected: parseRanking(aiResult.content, candidates), model: aiResult.model };
-    } catch (error) {
-      lastError = error;
-      if (!isRetryable(error) || attempt === 1) break;
-      // Never sleep for an unbounded Retry-After value.
-      const retrySeconds = Number(error.retryAfter);
-      const delay = Number.isFinite(retrySeconds) && retrySeconds > 0
-        ? Math.min(retrySeconds * 1000, 2000) : 500;
-      if (deadline - Date.now() < delay + 5000) break;
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-  throw lastError || new Error('AI ranking deadline exceeded');
+  const result = await generateAIResponse(messages, {
+    maxTokens: 1200,
+    temperature: 0.2,
+    timeoutMs: 25000,
+    json: true,
+  });
+  return { selected: parseRanking(result.content, candidates), model: result.model };
 }
 
 router.get('/', protect, async (req, res) => {
