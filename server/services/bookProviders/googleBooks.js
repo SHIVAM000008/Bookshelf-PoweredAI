@@ -1,4 +1,6 @@
 
+const { normalizeBookGenre } = require("../bookGenre");
+
 const GOOGLE_BOOKS_URL =
   "https://www.googleapis.com/books/v1/volumes";
 
@@ -45,8 +47,11 @@ async function searchGoogleBooks(query, limit = 12) {
         openLibraryKey: "",
         title: info.title,
         author: info.authors?.[0] || "Unknown author",
+        genre: normalizeBookGenre(info.categories),
         firstPublishYear:
-          parsedYear && Number.isFinite(parsedYear) ? parsedYear : null,
+          parsedYear && Number.isFinite(parsedYear)
+            ? parsedYear
+            : null,
         coverUrl: rawCover.replace(/^http:\/\//i, "https://"),
       };
     });

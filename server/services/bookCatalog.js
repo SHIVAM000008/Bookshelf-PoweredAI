@@ -23,19 +23,25 @@ function deduplicateBooks(books) {
       continue;
     }
 
-    // Prefer a result with a cover and an Open Library identifier when
-    // both providers return essentially the same title and author.
     const current = unique.get(key);
 
-    if (
+    const preferIncoming =
       (!current.coverUrl && book.coverUrl) ||
-      (!current.openLibraryKey && book.openLibraryKey)
-    ) {
+      (!current.openLibraryKey && book.openLibraryKey);
+
+    if (preferIncoming) {
       unique.set(key, {
         ...current,
         ...book,
         coverUrl: book.coverUrl || current.coverUrl,
-        openLibraryKey: book.openLibraryKey || current.openLibraryKey,
+        openLibraryKey:
+          book.openLibraryKey || current.openLibraryKey,
+        genre: book.genre || current.genre || "",
+      });
+    } else if (!current.genre && book.genre) {
+      unique.set(key, {
+        ...current,
+        genre: book.genre,
       });
     }
   }

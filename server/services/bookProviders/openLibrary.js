@@ -1,11 +1,13 @@
 
+const { normalizeBookGenre } = require("../bookGenre");
+
 const OPEN_LIBRARY_URL = "https://openlibrary.org/search.json";
 
 async function searchOpenLibrary(query, limit = 12) {
   const params = new URLSearchParams({
     q: query,
     limit: String(limit),
-    fields: "key,title,author_name,first_publish_year,cover_i",
+    fields: "key,title,author_name,first_publish_year,cover_i,subject",
   });
 
   const response = await fetch(`${OPEN_LIBRARY_URL}?${params}`, {
@@ -26,6 +28,7 @@ async function searchOpenLibrary(query, limit = 12) {
       openLibraryKey: book.key,
       title: book.title,
       author: book.author_name?.[0] || "Unknown author",
+      genre: normalizeBookGenre(book.subject),
       firstPublishYear: book.first_publish_year || null,
       coverUrl: book.cover_i
         ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
