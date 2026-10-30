@@ -79,13 +79,14 @@ export default function DiscoverBooks({ onBookAdded }) {
       const catalogBooks = catalogData.books || [];
 
       setResults(
-        catalogBooks.filter(
-          (book) =>
-            !savedBooks.some((saved) =>
-              isSameBook(book, saved)
-            )
-        )
-      );
+  catalogBooks
+    .filter((book) =>
+      !savedBooks.some((saved) =>
+        isSameBook(book, saved)
+      )
+    )
+    .slice(0, 5)
+);
     } catch (err) {
       setError(
         err.message || "Could not search the catalog."

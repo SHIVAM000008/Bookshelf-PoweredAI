@@ -1,4 +1,3 @@
-
 const GENRE_RULES = [
   ["Science Fiction", /\b(science fiction|sci-fi|scifi)\b/i],
   ["Fantasy", /\b(fantasy|epic fantasy|urban fantasy)\b/i],
@@ -21,23 +20,16 @@ const GENRE_RULES = [
   ["Children's", /\b(children's books|picture books|juvenile literature)\b/i],
   ["Fiction", /\bfiction\b/i],
 ];
-
 function normalizeBookGenre(values) {
   if (!Array.isArray(values)) return "";
-
   for (const value of values.slice(0, 30)) {
     if (typeof value !== "string") continue;
-
     const category = value.trim().slice(0, 200);
     if (!category) continue;
-
     for (const [genre, pattern] of GENRE_RULES) {
       if (pattern.test(category)) return genre;
     }
   }
-
   return "";
 }
-
 module.exports = { normalizeBookGenre };
-
