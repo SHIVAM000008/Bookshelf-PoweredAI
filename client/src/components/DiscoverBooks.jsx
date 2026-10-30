@@ -1,90 +1,78 @@
-import { useState } from "react";
-import { apiRequest } from "../lib/api";
-import { getBookSource, getBookIdentity } from "../lib/bookSource";
-import "./DiscoverBooks.css";
-
-function normalize(value) {
-  return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+import { useState } from 'react';
+import { apiRequest } from '../lib/api';
+import { getBookIdentity } from '../lib/bookSource';
+import UnifiedBookCard from './UnifiedBookCard';
+import './DiscoverBooks.css';
+const normalize = (value) => String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+function isSameBook(a, b) {
+  return Boolean((a.openLibraryKey && a.openLibraryKey === b.openLibraryKey) ||
+    (a.catalogProvider && a.catalogId && a.catalogProvider === b.catalogProvider && a.catalogId === b.catalogId) ||
+    (normalize(a.title) === normalize(b.title) && normalize(a.author) === normalize(b.author)));
 }
-function isSameBook(candidate, saved) {
-  if (candidate.openLibraryKey && saved.openLibraryKey && candidate.openLibraryKey === saved.openLibraryKey) return true;
-  if (candidate.catalogProvider && candidate.catalogId && candidate.catalogProvider === saved.catalogProvider && candidate.catalogId === saved.catalogId) return true;
-  return normalize(candidate.title) === normalize(saved.title) && normalize(candidate.author) === normalize(saved.author);
+function chooseVisible(books) {
+  const visible = books.slice(0, 10);
+  if (visible.length < 10) return visible;
+  const represented = new Set(visible.map((book) => book.catalogProvider));
+  for (const provider of ['openlibrary', 'googlebooks']) {
+    if (represented.has(provider)) continue;
+    const candidate = books.slice(10).find((book) => book.catalogProvider === provider &&
+      (book.relevanceScore || 0) >= (visible[9].relevanceScore || 0) - 12);
+    if (candidate) {
+      visible[9] = candidate;
+      visible.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+    }
+  }
+  return visible;
 }
 export default function DiscoverBooks({ onBookAdded }) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [searched, setSearched] = useState(false);
-  const [addingKey, setAddingKey] = useState("");
-  const [success, setSuccess] = useState("");
+  const [addingKey, setAddingKey] = useState('');
+  const [success, setSuccess] = useState('');
   async function handleSearch(event) {
     event.preventDefault();
-    const searchTerm = query.trim();
-    if (searchTerm.length < 2) { setError("Enter at least 2 characters"); return; }
-    setLoading(true); setError(""); setSuccess(""); setSearched(true); setResults([]);
+    const term = query.trim();
+    if (term.length < 2) { setError('Enter at least 2 characters'); return; }
+    setLoading(true); setError(''); setSuccess(''); setSearched(true); setResults([]);
     try {
-      const [catalogData, bookshelfData] = await Promise.all([
-        apiRequest(`/catalog/search?q=${encodeURIComponent(searchTerm)}`), apiRequest("/books"),
+      const [catalog, shelf] = await Promise.all([
+        apiRequest(`/catalog/search?q=${encodeURIComponent(term)}`), apiRequest('/books'),
       ]);
-      const savedBooks = bookshelfData.books || [];
-      setResults((catalogData.books || []).filter((book) =>
-        !savedBooks.some((saved) => isSameBook(book, saved))).slice(0, 5));
-    } catch (err) { setError(err.message || "Could not search the catalog."); }
+      setResults(chooseVisible((catalog.books || []).filter((book) => !(shelf.books || []).some((saved) => isSameBook(book, saved)))));
+    } catch (err) { setError(err.message || 'Could not search the catalog.'); }
     finally { setLoading(false); }
   }
   async function handleAddBook(book) {
-    const key = getBookIdentity(book);
     if (addingKey) return;
-    setAddingKey(key); setError(""); setSuccess("");
+    const key = getBookIdentity(book);
+    setAddingKey(key); setError(''); setSuccess('');
     try {
-      const data = await apiRequest("/books", { method: "POST", body: JSON.stringify({
-        title: book.title, author: book.author, genre: book.genre || "", status: "Want to Read",
-        description: "", coverUrl: book.coverUrl || "", openLibraryKey: book.openLibraryKey || "",
-        catalogProvider: book.catalogProvider || "", catalogId: book.catalogId || "",
+      const data = await apiRequest('/books', { method:'POST', body:JSON.stringify({
+        title:book.title, author:book.author, genre:book.genre || '', status:'Want to Read',
+        description:book.description || '', firstPublishYear:book.firstPublishYear || null,
+        coverUrl:book.coverUrl || '', openLibraryKey:book.openLibraryKey || '',
+        catalogProvider:book.catalogProvider || '', catalogId:book.catalogId || '',
       }) });
       setResults((previous) => previous.filter((candidate) => !isSameBook(candidate, data.book)));
       onBookAdded?.(data.book);
       setSuccess(data.alreadySaved ? `"${book.title}" is already on your bookshelf.` : `"${book.title}" added to your bookshelf!`);
-    } catch (err) { setError(err.message || "Could not add this book."); }
-    finally { setAddingKey(""); }
+    } catch (err) { setError(err.message || 'Could not add this book.'); }
+    finally { setAddingKey(''); }
   }
-  return (
-    <section className="discover-books">
-      <form className="discover-search" onSubmit={handleSearch}>
-        <input type="search" placeholder="Search for a book or author..." value={query}
-          onChange={(event) => setQuery(event.target.value)} minLength={2} maxLength={100} required />
-        <button type="submit" disabled={loading}>{loading ? "Searching..." : "Search"}</button>
-      </form>
-      {error && <p className="error" role="alert">{error}</p>}
-      {success && <p className="success" role="status">{success}</p>}
-      {loading && <p role="status">Searching book catalogs...</p>}
-      {!loading && searched && !error && results.length === 0 &&
-        <p>No new books found. Matching books may already be on your bookshelf.</p>}
-      <div className="catalog-grid">
-        {results.map((book) => {
-          const key = getBookIdentity(book);
-          const source = getBookSource(book);
-          return (
-            <article className="catalog-card" key={key}>
-              {book.coverUrl ? <img src={book.coverUrl} alt={`Cover of ${book.title}`} loading="lazy" />
-                : <div className="cover-placeholder">No cover available</div>}
-              <h3>{book.title}</h3>
-              <p>By {book.author}</p>
-              <p>Genre: {book.genre || "Not specified"}</p>
-              <p>Published: {book.firstPublishYear || "Unknown"}</p>
-              <p className="catalog-source">Source: {source.name}</p>
-              {source.url && <p><a href={source.url} target="_blank" rel="noopener noreferrer">
-                Open on {source.name} ↗
-              </a></p>}
-              <button type="button" onClick={() => handleAddBook(book)} disabled={Boolean(addingKey)}>
-                {addingKey === key ? "Adding..." : "Add to My Bookshelf"}
-              </button>
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  );
+  return <section className="discover-books">
+    <form className="discover-search" onSubmit={handleSearch}>
+      <input type="search" placeholder="Search for a book or author..." value={query}
+        onChange={(event) => setQuery(event.target.value)} minLength={2} maxLength={100} required />
+      <button type="submit" disabled={loading}>{loading ? 'Searching...' : 'Search'}</button>
+    </form>
+    {error && <p className="error" role="alert">{error}</p>}
+    {success && <p className="success" role="status">{success}</p>}
+    {loading && <p role="status">Searching both book catalogs...</p>}
+    {!loading && searched && !error && !results.length && <p>No new books found.</p>}
+    <div className="catalog-grid">{results.map((book) => <UnifiedBookCard key={getBookIdentity(book)} book={book}
+      onAdd={handleAddBook} adding={addingKey === getBookIdentity(book)} disabled={Boolean(addingKey)} />)}</div>
+  </section>;
 }

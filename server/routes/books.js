@@ -28,6 +28,7 @@ router.post("/", protect, uploadBookCover, async (req, res) => {
       openLibraryKey,
       catalogProvider,
       catalogId,
+      firstPublishYear,
     } = req.body;
 
     if (
@@ -147,6 +148,7 @@ router.post("/", protect, uploadBookCover, async (req, res) => {
       openLibraryKey: cleanKey,
       catalogProvider: cleanProvider,
       catalogId: cleanCatalogId,
+      firstPublishYear: Number.isInteger(Number(firstPublishYear)) && Number(firstPublishYear) >= 1000 && Number(firstPublishYear) <= 2200 ? Number(firstPublishYear) : null,
     });
 
     return res.status(201).json({

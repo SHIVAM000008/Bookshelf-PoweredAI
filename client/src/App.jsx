@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { apiRequest } from "./lib/api";
 import AppShell from "./components/AppShell";
 import "./App.css";
+import './components/UnifiedBookGrid.css';
 
 import Bookshelf from "./components/Bookshelf";
 import DiscoverBooks from "./components/DiscoverBooks";

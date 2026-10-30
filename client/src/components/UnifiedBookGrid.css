@@ -1,0 +1,21 @@
+/* Shared responsive layout across Bookshelf, Discover and Recommendations. */
+.bs-app .discover-books .catalog-grid,
+.bs-app .ai-recommendations-grid,
+.bs-app .bookshelf .book-grid {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; align-items:stretch;
+}
+@media(min-width:1100px) {
+  .bs-app .discover-books .catalog-grid,
+  .bs-app .ai-recommendations-grid,
+  .bs-app .bookshelf .book-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media(min-width:1500px) {
+  .bs-app .discover-books .catalog-grid,
+  .bs-app .ai-recommendations-grid,
+  .bs-app .bookshelf .book-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+}
+@media(max-width:380px) {
+  .bs-app .discover-books .catalog-grid,
+  .bs-app .ai-recommendations-grid,
+  .bs-app .bookshelf .book-grid { grid-template-columns:minmax(0,1fr); }
+}

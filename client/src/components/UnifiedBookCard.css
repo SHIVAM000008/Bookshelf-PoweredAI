@@ -1,0 +1,26 @@
+.unified-book-card { display:flex; flex-direction:column; min-width:0; height:100%; overflow:hidden;
+  border:1px solid var(--border-color); border-radius:var(--radius-md); background:var(--bg-card);
+  color:var(--text-primary); box-shadow:var(--shadow-soft); transition:transform 160ms ease,box-shadow 160ms ease; }
+.unified-book-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-card); }
+.unified-book-cover { height:205px; padding:12px; display:flex; align-items:center; justify-content:center;
+  background:var(--bg-secondary); color:var(--text-secondary); font-size:12px; text-align:center; }
+.unified-book-cover img { width:100%; height:100%; object-fit:contain; }
+.unified-book-details { display:flex; flex:1; flex-direction:column; gap:9px; padding:14px; min-width:0; }
+.unified-book-details h3 { margin:0; font-family:var(--font-heading); font-size:1rem; line-height:1.4; overflow-wrap:anywhere; }
+.unified-book-details p { margin:0; font-size:.81rem; line-height:1.55; overflow-wrap:anywhere; }
+.unified-book-details p strong { color:var(--text-primary); }
+.unified-book-author, .unified-book-description { color:var(--text-secondary); }
+.unified-book-description { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:5; overflow:hidden; }
+.unified-book-actions { margin-top:auto; display:flex; flex-direction:column; gap:8px; padding-top:10px; }
+.unified-book-actions a,.unified-book-actions button { display:flex; align-items:center; justify-content:center;
+  min-height:40px; padding:9px; border:1px solid var(--brand-primary); border-radius:var(--radius-sm);
+  font:inherit; font-size:.8rem; font-weight:600; text-align:center; text-decoration:none; cursor:pointer; }
+.unified-book-actions a { background:var(--brand-soft); color:var(--text-primary); }
+.unified-book-actions button { background:var(--brand-primary); color:white; }
+.unified-book-actions a:hover { background:var(--bg-hover); }
+.unified-book-actions button:hover:not(:disabled) { background:var(--brand-hover); }
+.unified-book-actions button:disabled { opacity:.6; cursor:not-allowed; }
+.unified-book-actions .delete-button { border-color:var(--border-strong); background:transparent; color:var(--text-secondary); }
+.unified-book-actions .delete-button:hover:not(:disabled) { background:rgb(182 77 102 / 10%); }
+@media(max-width:560px) { .unified-book-cover { height:170px; padding:9px; } .unified-book-details { padding:11px; gap:7px; } }
+@media(prefers-reduced-motion:reduce) { .unified-book-card { transition:none; } .unified-book-card:hover { transform:none; } }
