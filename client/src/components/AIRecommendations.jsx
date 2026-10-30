@@ -56,7 +56,7 @@ export default function AIRecommendations({ onBookAdded }) {
         body: JSON.stringify({
           title: book.title,
           author: book.author,
-          genre: basedOn[0] || "",
+          genre: book.genre || "",
           status: "Want to Read",
           description: book.recommendedBecause || "",
           coverUrl: book.coverUrl || "",

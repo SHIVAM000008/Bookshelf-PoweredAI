@@ -49,6 +49,9 @@ export default function RecommendationBookCard({
         <p className="recommendation-book-author">
           {book.author || "Author unknown"}
         </p>
+        <p className="recommendation-book-genre">
+  Genre: {book.genre || "Not specified"}
+</p>
 
         {book.firstPublishYear && (
           <p className="recommendation-book-year">

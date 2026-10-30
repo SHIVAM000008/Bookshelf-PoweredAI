@@ -124,7 +124,7 @@ export default function Recommendations({ onBookAdded }) {
         body: JSON.stringify({
           title: book.title,
           author: book.author,
-          genre: basedOn[0] || "",
+          genre: book.genre || "",
           status: "Want to Read",
           description: "",
           coverUrl: book.coverUrl || "",
