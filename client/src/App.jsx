@@ -12,6 +12,28 @@ import Recommendations from "./components/Recommendations";
 import AIRecommendations from "./components/AIRecommendations";
 import ResearchAssistant from "./components/ResearchAssistant";
 
+function BookLogo() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="25"
+      height="25"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 7.5C9.5 5.7 6.3 5.2 3 6v12c3.3-.8 6.5-.3 9 1.5" />
+      <path d="M12 7.5C14.5 5.7 17.7 5.2 21 6v12c-3.3-.8-6.5-.3-9 1.5" />
+      <path d="M12 7.5v12" />
+      <path d="M6 9.2c1.5-.2 2.8.1 4 .7" />
+      <path d="M18 9.2c-1.5-.2-2.8.1-4 .7" />
+    </svg>
+  );
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [mode, setMode] = useState("login");
@@ -120,14 +142,17 @@ function App() {
     }
   }
 
-  if (loading && !user) {
-    return (
-      <main className="auth-loading">
-        <div className="loading-mark">B</div>
-        <p>Preparing your reading space...</p>
-      </main>
-    );
-  }
+  
+ if (loading && !user) {
+  return (
+    <main className="auth-loading" role="status" aria-live="polite">
+      <div className="loading-mark">
+        <BookLogo />
+      </div>
+      <p>Preparing your reading space...</p>
+    </main>
+  );
+}
 
   if (user) {
     return (
@@ -167,15 +192,17 @@ function App() {
 
   return (
     <main className="auth-container">
-      <section className="auth-card">
-        <a className="auth-brand" href="#login">
-          <span className="brand-mark">B</span>
+  <section className="auth-card">
+    <a className="auth-brand" href="#login">
+      <span className="brand-mark">
+        <BookLogo />
+      </span>
 
-          <span className="brand-copy">
-            <strong>Bookshelf</strong>
-            <span>POWERED AI</span>
-          </span>
-        </a>
+      <span className="brand-copy">
+        <strong>Bookshelf</strong>
+        <span>POWERED AI</span>
+      </span>
+    </a>
 
         <div className="auth-heading">
           <span className="eyebrow">

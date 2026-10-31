@@ -7,8 +7,8 @@ import "./AppShell.mobile.css";
 
 const navigation = [
   { id: "overview", label: "Overview", icon: "⌂" },
-  { id: "bookshelf", label: "My Bookshelf", icon: "▤" },
   { id: "add-book", label: "Add a Book", icon: "＋" },
+  { id: "bookshelf", label: "My Bookshelf", icon: "▤" },
   { id: "discover", label: "Discover Books", icon: "⌕" },
   { id: "recommendations", label: "Recommendations", icon: "✧" },
   { id: "assistant", label: "AI Assistant", icon: "✧" },
@@ -83,7 +83,7 @@ export default function AppShell({
   const launcherDragRef = useRef(null);
   const suppressLauncherClickRef = useRef(false);
 
-  const [assistantMinimized, setAssistantMinimized] = useState(false);
+  const [assistantMinimized, setAssistantMinimized] = useState(true);
   const [assistantPosition, setAssistantPosition] = useState(null);
   const [assistantSize, setAssistantSize] = useState(null);
   const [launcherPosition, setLauncherPosition] = useState(null);
@@ -260,6 +260,15 @@ export default function AppShell({
     suppressLauncherClickRef.current = drag.moved;
     launcherDragRef.current = null;
   }
+  function openFloatingAssistant() {
+    setAssistantMinimized(false);
+    setMobileMenuOpen(false);
+    setProfileOpen(false);
+
+    requestAnimationFrame(() => {
+      assistantPanelRef.current?.focus();
+    });
+  }
 
   // Keep the floating window visible after resizing.
   useEffect(() => {
@@ -373,6 +382,11 @@ export default function AppShell({
   }, [profileOpen, mobileMenuOpen]);
 
   function navigateTo(page) {
+    if (page === "assistant") {
+      openFloatingAssistant();
+      return;
+    }
+
     setActivePage(page);
     setMobileMenuOpen(false);
     setProfileOpen(false);
@@ -895,33 +909,51 @@ export default function AppShell({
                     and explore ideas with your AI research companion.
                   </p>
 
-                  <div className="bs-welcome-actions">
-                    <button
-                      className="bs-button bs-button-primary"
-                      type="button"
-                      onClick={() => navigateTo("bookshelf")}
-                    >
-                      <span aria-hidden="true">＋</span>
-                      View my bookshelf
-                    </button>
+                  
+<div className="bs-welcome-actions">
+  <button
+    className="bs-button bs-button-primary"
+    type="button"
+    onClick={() => navigateTo("add-book")}
+  >
+    <span aria-hidden="true">＋</span>
+    Add a Book
+  </button>
 
-                    <button
-                      className="bs-button bs-button-secondary"
-                      type="button"
-                      onClick={() => navigateTo("discover")}
-                    >
-                      Discover books
-                    </button>
+  <button
+    className="bs-button bs-button-secondary"
+    type="button"
+    onClick={() => navigateTo("bookshelf")}
+  >
+    My Bookshelf
+  </button>
 
-                    <button
-                      className="bs-button bs-button-secondary"
-                      type="button"
-                      onClick={() => navigateTo("recommendations")}
-                    >
-                      View recommendations
-                    </button>
-                    <button className="bs-button bs-button-secondary bs-mobile-ai-shortcut" type="button" onClick={() => navigateTo("assistant")}>✧ AI Assistant</button>
-                  </div>
+  <button
+    className="bs-button bs-button-secondary"
+    type="button"
+    onClick={() => navigateTo("discover")}
+  >
+    Discover books
+  </button>
+
+  <button
+    className="bs-button bs-button-secondary"
+    type="button"
+    onClick={() => navigateTo("recommendations")}
+  >
+    View recommendations
+  </button>
+
+  <button
+    className="bs-button bs-button-secondary bs-mobile-ai-shortcut"
+    type="button"
+    onClick={openFloatingAssistant}
+  >
+    <span aria-hidden="true">✧</span>
+    AI Assistant
+  </button>
+</div>
+
                 </div>
 
                 <div className="bs-welcome-art" aria-hidden="true">
@@ -1091,6 +1123,7 @@ export default function AppShell({
           <aside
             ref={assistantPanelRef}
             id="bs-research-panel"
+            tabIndex={-1}
             className={`bs-research-column${
               assistantMinimized ? " is-minimized" : ""
             }${
