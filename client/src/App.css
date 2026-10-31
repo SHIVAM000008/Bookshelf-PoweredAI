@@ -293,3 +293,28 @@
     transition: none;
   }
 }
+
+/* Password reset UI */
+
+.auth-forgot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -7px;
+}
+
+.auth-forgot .text-button {
+  color: var(--brand-primary);
+  font-size: 12px;
+}
+
+.auth-success {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}

@@ -26,6 +26,15 @@ async function protect(req, res, next) {
       });
     }
 
+    if (
+      decoded.sessionVersion !==
+      (user.sessionVersion ?? 0)
+    ) {
+      return res.status(401).json({
+        message: "Session expired. Please log in again.",
+      });
+    }
+
     req.user = user;
     next();
   } catch (error) {

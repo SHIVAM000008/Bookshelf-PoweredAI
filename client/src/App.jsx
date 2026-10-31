@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { apiRequest } from "./lib/api";
 import AppShell from "./components/AppShell";
 import "./App.css";
-import './components/UnifiedBookGrid.css';
+import "./components/UnifiedBookGrid.css";
 
 import Bookshelf from "./components/Bookshelf";
 import AddBookPage from "./components/AddBookPage";
@@ -34,17 +34,50 @@ function BookLogo() {
   );
 }
 
+function readResetToken() {
+  const url = new URL(window.location.href);
+  const token = url.searchParams.get("resetToken");
+
+  if (token !== null) {
+    url.searchParams.delete("resetToken");
+
+    window.history.replaceState(
+      window.history.state,
+      "",
+      url.pathname + url.search + url.hash
+    );
+  }
+
+  return token;
+}
+
 function App() {
+  const [resetToken, setResetToken] = useState(readResetToken);
   const [user, setUser] = useState(null);
-  const [mode, setMode] = useState("login");
+
+  const [mode, setMode] = useState(() => {
+    return new URLSearchParams(window.location.search).has(
+      "resetToken"
+    )
+      ? "reset"
+      : "login";
+  });
+
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
   });
 
+  const [resetForm, setResetForm] = useState({
+    password: "",
+    confirmPassword: "",
+  });
+
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [bookshelfVersion, setBookshelfVersion] = useState(0);
 
   useEffect(() => {
@@ -75,6 +108,30 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (resetToken) {
+      setMode("reset");
+    }
+  }, [resetToken]);
+
+  function changeMode(nextMode) {
+    setMode(nextMode);
+    setError("");
+    setMessage("");
+    setForm((current) => ({
+      ...current,
+      password: "",
+    }));
+    setResetForm({
+      password: "",
+      confirmPassword: "",
+    });
+
+    if (nextMode !== "reset") {
+      setResetToken(null);
+    }
+  }
+
   function handleBookAdded() {
     setBookshelfVersion((version) => version + 1);
   }
@@ -83,9 +140,83 @@ function App() {
     event.preventDefault();
 
     setError("");
-    setLoading(true);
+    setMessage("");
+    setSubmitting(true);
 
     try {
+      if (mode === "forgot") {
+        const data = await apiRequest(
+          "/auth/forgot-password",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              email: form.email,
+            }),
+          }
+        );
+
+        setMessage(
+          data.message ||
+            "If an account exists, reset instructions will be provided."
+        );
+        return;
+      }
+
+      if (mode === "reset") {
+        if (!resetToken) {
+          setError(
+            "Reset link is missing. Request a new password reset."
+          );
+          return;
+        }
+
+        if (
+          resetForm.password !==
+          resetForm.confirmPassword
+        ) {
+          setError("Passwords do not match.");
+          return;
+        }
+
+        if (
+          resetForm.password.length < 12 ||
+          resetForm.password.length > 72
+        ) {
+          setError(
+            "Password must contain 12–72 characters."
+          );
+          return;
+        }
+
+        const data = await apiRequest(
+          "/auth/reset-password",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              token: resetToken,
+              password: resetForm.password,
+            }),
+          }
+        );
+
+        setResetToken(null);
+        setResetForm({
+          password: "",
+          confirmPassword: "",
+        });
+        setForm((current) => ({
+          ...current,
+          password: "",
+        }));
+        setMode("login");
+        setMessage(
+          data.message ||
+            "Password updated. Please log in."
+        );
+        setUser(null);
+        return;
+      }
+
       const endpoint =
         mode === "register"
           ? "/auth/register"
@@ -112,14 +243,17 @@ function App() {
       });
       setBookshelfVersion(0);
     } catch (err) {
-      setError(err.message || "Authentication failed.");
+      setError(
+        err.message || "Something went wrong."
+      );
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   }
 
   async function handleLogout() {
     setError("");
+    setMessage("");
     setLoading(true);
 
     try {
@@ -129,7 +263,7 @@ function App() {
 
       setUser(null);
       setBookshelfVersion(0);
-      setMode("login");
+      changeMode("login");
       setForm({
         name: "",
         email: "",
@@ -142,19 +276,22 @@ function App() {
     }
   }
 
-  
- if (loading && !user) {
-  return (
-    <main className="auth-loading" role="status" aria-live="polite">
-      <div className="loading-mark">
-        <BookLogo />
-      </div>
-      <p>Preparing your reading space...</p>
-    </main>
-  );
-}
+  if (loading && !user) {
+    return (
+      <main
+        className="auth-loading"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="loading-mark">
+          <BookLogo />
+        </div>
+        <p>Preparing your reading space...</p>
+      </main>
+    );
+  }
 
-  if (user) {
+  if (user && mode !== "reset") {
     return (
       <>
         <AppShell
@@ -166,28 +303,32 @@ function App() {
           addBook={(navigateTo) => (
             <AddBookPage
               onBookAdded={handleBookAdded}
-              onViewBookshelf={() => navigateTo("bookshelf")}
+              onViewBookshelf={() =>
+                navigateTo("bookshelf")
+              }
             />
           )}
           discover={
-  <DiscoverBooks
-    userId={user?.id || user?._id}
-    onBookAdded={handleBookAdded}
-  />
-}
-contentRecommendations={
-  <Recommendations
-    userId={user?.id || user?._id}
-    onBookAdded={handleBookAdded}
-  />
-}
-aiRecommendations={
-  <AIRecommendations
-    userId={user?.id || user?._id}
-    onBookAdded={handleBookAdded}
-  />
-}
-researchAssistant={<ResearchAssistant />}
+            <DiscoverBooks
+              userId={user?.id || user?._id}
+              onBookAdded={handleBookAdded}
+            />
+          }
+          contentRecommendations={
+            <Recommendations
+              userId={user?.id || user?._id}
+              onBookAdded={handleBookAdded}
+            />
+          }
+          aiRecommendations={
+            <AIRecommendations
+              userId={user?.id || user?._id}
+              onBookAdded={handleBookAdded}
+            />
+          }
+          researchAssistant={
+            <ResearchAssistant />
+          }
         />
 
         {error && (
@@ -199,36 +340,52 @@ researchAssistant={<ResearchAssistant />}
     );
   }
 
+  const headings = {
+    login: {
+      title: "Welcome back.",
+      description:
+        "Pick up where your curiosity left off.",
+    },
+    register: {
+      title: "Begin a new chapter.",
+      description:
+        "Create your account and build a library of your own.",
+    },
+    forgot: {
+      title: "Forgot your password?",
+      description:
+        "Enter your registered email address to request a password reset link.",
+    },
+    reset: {
+      title: "Create a new password.",
+      description:
+        "Choose a secure new password to regain access to your reading space.",
+    },
+  };
+
+  const heading = headings[mode] || headings.login;
+
   return (
     <main className="auth-container">
-  <section className="auth-card">
-    <a className="auth-brand" href="#login">
-      <span className="brand-mark">
-        <BookLogo />
-      </span>
+      <section className="auth-card">
+        <a className="auth-brand" href="#login">
+          <span className="brand-mark">
+            <BookLogo />
+          </span>
 
-      <span className="brand-copy">
-        <strong>Bookshelf</strong>
-        <span>POWERED AI</span>
-      </span>
-    </a>
+          <span className="brand-copy">
+            <strong>Bookshelf</strong>
+            <span>POWERED AI</span>
+          </span>
+        </a>
 
         <div className="auth-heading">
           <span className="eyebrow">
             YOUR PERSONAL READING SPACE
           </span>
 
-          <h1>
-            {mode === "login"
-              ? "Welcome back."
-              : "Begin a new chapter."}
-          </h1>
-
-          <p>
-            {mode === "login"
-              ? "Pick up where your curiosity left off."
-              : "Create your account and build a library of your own."}
-          </p>
+          <h1>{heading.title}</h1>
+          <p>{heading.description}</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -252,46 +409,110 @@ researchAssistant={<ResearchAssistant />}
             </label>
           )}
 
-          <label>
-            Email address
-            <input
-              type="email"
-              value={form.email}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  email: event.target.value,
-                })
-              }
-              autoComplete="email"
-              required
-              placeholder="you@example.com"
-            />
-          </label>
+          {mode !== "reset" && (
+            <label>
+              Email address
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    email: event.target.value,
+                  })
+                }
+                autoComplete="email"
+                required
+                maxLength={254}
+                placeholder="you@example.com"
+              />
+            </label>
+          )}
 
-          <label>
-            Password
-            <input
-              type="password"
-              value={form.password}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  password: event.target.value,
-                })
-              }
-              autoComplete={
-                mode === "register"
-                  ? "new-password"
-                  : "current-password"
-              }
-              required
-              minLength={
-                mode === "register" ? 12 : undefined
-              }
-              placeholder="Enter your password"
-            />
-          </label>
+          {(mode === "login" ||
+            mode === "register") && (
+            <label>
+              Password
+              <input
+                type="password"
+                value={form.password}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    password: event.target.value,
+                  })
+                }
+                autoComplete={
+                  mode === "register"
+                    ? "new-password"
+                    : "current-password"
+                }
+                required
+                minLength={
+                  mode === "register" ? 12 : undefined
+                }
+                maxLength={
+                  mode === "register" ? 72 : undefined
+                }
+                placeholder="Enter your password"
+              />
+            </label>
+          )}
+
+          {mode === "login" && (
+            <div className="auth-forgot">
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => changeMode("forgot")}
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
+
+          {mode === "reset" && (
+            <>
+              <label>
+                New password
+                <input
+                  type="password"
+                  value={resetForm.password}
+                  onChange={(event) =>
+                    setResetForm({
+                      ...resetForm,
+                      password: event.target.value,
+                    })
+                  }
+                  autoComplete="new-password"
+                  minLength={12}
+                  maxLength={72}
+                  required
+                  placeholder="At least 12 characters"
+                />
+              </label>
+
+              <label>
+                Confirm new password
+                <input
+                  type="password"
+                  value={resetForm.confirmPassword}
+                  onChange={(event) =>
+                    setResetForm({
+                      ...resetForm,
+                      confirmPassword:
+                        event.target.value,
+                    })
+                  }
+                  autoComplete="new-password"
+                  minLength={12}
+                  maxLength={72}
+                  required
+                  placeholder="Re-enter your password"
+                />
+              </label>
+            </>
+          )}
 
           {error && (
             <p role="alert" className="error">
@@ -299,38 +520,70 @@ researchAssistant={<ResearchAssistant />}
             </p>
           )}
 
+          {message && (
+            <p
+              role="status"
+              className="auth-success"
+            >
+              {message}
+            </p>
+          )}
+
           <button
             type="submit"
             className="auth-submit"
-            disabled={loading}
+            disabled={submitting || !resetToken && mode === "reset"}
           >
-            {loading
+            {submitting
               ? "Please wait..."
               : mode === "login"
                 ? "Enter your library"
-                : "Create your account"}
-            {!loading && <span aria-hidden="true">→</span>}
+                : mode === "register"
+                  ? "Create your account"
+                  : mode === "forgot"
+                    ? "Request reset link"
+                    : "Reset password"}
+
+            {!submitting && (
+              <span aria-hidden="true">→</span>
+            )}
           </button>
         </form>
 
-        <p className="auth-switch">
-          {mode === "login"
-            ? "New to Bookshelf PoweredAI?"
-            : "Already have an account?"}
+        {mode === "login" ||
+        mode === "register" ? (
+          <p className="auth-switch">
+            {mode === "login"
+              ? "New to Bookshelf PoweredAI?"
+              : "Already have an account?"}
 
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => {
-              setMode((current) =>
-                current === "login" ? "register" : "login"
-              );
-              setError("");
-            }}
-          >
-            {mode === "login" ? "Create an account" : "Log in"}
-          </button>
-        </p>
+            <button
+              type="button"
+              className="text-button"
+              onClick={() =>
+                changeMode(
+                  mode === "login"
+                    ? "register"
+                    : "login"
+                )
+              }
+            >
+              {mode === "login"
+                ? "Create an account"
+                : "Log in"}
+            </button>
+          </p>
+        ) : (
+          <p className="auth-switch">
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => changeMode("login")}
+            >
+              ← Back to login
+            </button>
+          </p>
+        )}
 
         <div className="auth-decoration">
           <span>READ</span>
