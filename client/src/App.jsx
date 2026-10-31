@@ -170,15 +170,24 @@ function App() {
             />
           )}
           discover={
-            <DiscoverBooks onBookAdded={handleBookAdded} />
-          }
-          contentRecommendations={
-            <Recommendations onBookAdded={handleBookAdded} />
-          }
-          aiRecommendations={
-            <AIRecommendations onBookAdded={handleBookAdded} />
-          }
-          researchAssistant={<ResearchAssistant />}
+  <DiscoverBooks
+    userId={user?.id || user?._id}
+    onBookAdded={handleBookAdded}
+  />
+}
+contentRecommendations={
+  <Recommendations
+    userId={user?.id || user?._id}
+    onBookAdded={handleBookAdded}
+  />
+}
+aiRecommendations={
+  <AIRecommendations
+    userId={user?.id || user?._id}
+    onBookAdded={handleBookAdded}
+  />
+}
+researchAssistant={<ResearchAssistant />}
         />
 
         {error && (
