@@ -17,6 +17,7 @@ const aiRoutes = require("./routes/ai");
 const researchRoutes = require("./routes/research");
 
 const app = express();
+app.set("trust proxy", "loopback");
 const PORT = process.env.PORT || 5000;
 
 // 1. CORS must run before API routes
