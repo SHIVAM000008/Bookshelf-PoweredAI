@@ -1202,7 +1202,7 @@
 
 @media (max-width: 380px) {
   .bs-theme-toggle > span:last-child {
-    display: none;
+    display: inline;
   }
 
   .bs-breadcrumb > span:first-child {

@@ -261,15 +261,21 @@ export default function AppShell({
     launcherDragRef.current = null;
   }
   function openFloatingAssistant() {
-    setAssistantMinimized(false);
-    setMobileMenuOpen(false);
-    setProfileOpen(false);
+  const isMobile = window.matchMedia("(max-width: 680px)").matches;
 
-    requestAnimationFrame(() => {
-      assistantPanelRef.current?.focus();
-    });
+  if (isMobile) {
+    setActivePage("assistant");
+  } else {
+    setAssistantMinimized(false);
   }
 
+  setMobileMenuOpen(false);
+  setProfileOpen(false);
+
+  requestAnimationFrame(() => {
+    assistantPanelRef.current?.focus();
+  });
+}
   // Keep the floating window visible after resizing.
   useEffect(() => {
     function keepAssistantVisible() {
