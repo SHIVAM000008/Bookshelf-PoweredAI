@@ -8,6 +8,7 @@ import "./AppShell.mobile.css";
 const navigation = [
   { id: "overview", label: "Overview", icon: "⌂" },
   { id: "bookshelf", label: "My Bookshelf", icon: "▤" },
+  { id: "add-book", label: "Add a Book", icon: "＋" },
   { id: "discover", label: "Discover Books", icon: "⌕" },
   { id: "recommendations", label: "Recommendations", icon: "✧" },
   { id: "assistant", label: "AI Assistant", icon: "✧" },
@@ -57,6 +58,7 @@ export default function AppShell({
   user,
   onLogout,
   bookshelf,
+  addBook,
   discover,
   contentRecommendations,
   aiRecommendations,
@@ -960,9 +962,9 @@ export default function AppShell({
                   <button
                     className="bs-text-button"
                     type="button"
-                    onClick={() => navigateTo("discover")}
+                    onClick={() => navigateTo("add-book")}
                   >
-                    Find books{" "}
+                    Add a Book{" "}
                     <span aria-hidden="true">→</span>
                   </button>
                 </div>
@@ -972,6 +974,16 @@ export default function AppShell({
                 </div>
               </section>
             )}
+
+            {/* Add a Book page */}
+            {activePage === "add-book" && (
+              <section className="bs-page bs-section">
+  <div className="bs-feature-content">
+    {addBook?.(navigateTo)}
+  </div>
+</section>
+)}
+  
 
             {/* Discover Books page */}
             {activePage === "discover" && (

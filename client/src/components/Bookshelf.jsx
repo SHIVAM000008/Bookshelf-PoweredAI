@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from "react";
 import { apiRequest } from "../lib/api";
-import BookForm from "./BookForm";
 import BookCard from "./BookCard";
 
 export default function Bookshelf() {
@@ -25,13 +24,6 @@ export default function Bookshelf() {
 
     loadBooks();
   }, []);
-
-  function handleBookAdded(newBook) {
-    setBooks((previous) => [
-      newBook,
-      ...previous.filter((book) => book._id !== newBook._id),
-    ]);
-  }
 
   function handleBookUpdated(updatedBook) {
     setBooks((previous) =>
@@ -75,8 +67,6 @@ export default function Bookshelf() {
 
   return (
     <section className="bookshelf">
-      <BookForm onBookAdded={handleBookAdded} />
-
       <div className="bookshelf-filters">
         <label>
           Search books
@@ -108,7 +98,7 @@ export default function Bookshelf() {
 
       <div className="book-grid">
         {filteredBooks.length === 0 ? (
-          <p>No books match your search or filter.</p>
+          <p>{books.length === 0 ? "Your bookshelf is empty. Use Add a Book to get started." : "No books match your search or filter."}</p>
         ) : (
           filteredBooks.map((book) => (
             <BookCard

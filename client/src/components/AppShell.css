@@ -408,7 +408,7 @@
 
 .bs-page {
   min-width: 0;
-  min-height: 65vh;
+  min-height: 0;
   animation: bs-page-enter 180ms ease both;
 }
 
@@ -950,10 +950,12 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 18px 0 4px;
+  margin-top: auto;
+  padding: 18px 0 8px;
   border-top: 1px solid var(--border-color);
   color: var(--text-muted);
   font-size: 10px;
+  flex-shrink: 0;
 }
 
 /* Mobile backdrop stays hidden on desktop */

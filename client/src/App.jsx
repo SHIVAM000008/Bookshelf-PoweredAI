@@ -6,6 +6,7 @@ import "./App.css";
 import './components/UnifiedBookGrid.css';
 
 import Bookshelf from "./components/Bookshelf";
+import AddBookPage from "./components/AddBookPage";
 import DiscoverBooks from "./components/DiscoverBooks";
 import Recommendations from "./components/Recommendations";
 import AIRecommendations from "./components/AIRecommendations";
@@ -137,6 +138,12 @@ function App() {
           bookshelf={
             <Bookshelf key={bookshelfVersion} />
           }
+          addBook={(navigateTo) => (
+            <AddBookPage
+              onBookAdded={handleBookAdded}
+              onViewBookshelf={() => navigateTo("bookshelf")}
+            />
+          )}
           discover={
             <DiscoverBooks onBookAdded={handleBookAdded} />
           }

@@ -1,0 +1,422 @@
+
+/* =========================================================
+   ADD A BOOK PAGE
+   Scoped to the manual Add a Book view.
+   Does not affect bookshelf cards or edit forms.
+   ========================================================= */
+
+.bs-app .add-book-page {
+  width: 100%;
+  max-width: 1100px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 8px 0 32px;
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   SUCCESS MESSAGE
+   ========================================================= */
+
+.bs-app .add-book-success {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 18px 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: 13px;
+  background: var(--brand-soft);
+}
+
+.bs-app .add-book-success strong {
+  color: var(--text-primary);
+}
+
+.bs-app .add-book-success p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* =========================================================
+   FORM CONTAINER
+   ========================================================= */
+
+.bs-app .add-book-form {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 28px 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-soft);
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   FORM HEADER
+   ========================================================= */
+
+.bs-app .add-book-form-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.bs-app .add-book-form-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  color: var(--focus-ring);
+  font-size: 22px;
+}
+
+.bs-app .add-book-form-header h3 {
+  margin: 0 0 4px;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.bs-app .add-book-form-header p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   FORM GRID
+   ========================================================= */
+
+.bs-app .add-book-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.bs-app .add-book-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bs-app .add-book-field-full {
+  grid-column: 1 / -1;
+}
+
+.bs-app .add-book-field small {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* =========================================================
+   INPUTS, SELECT AND DESCRIPTION
+   ========================================================= */
+
+.bs-app .add-book-field input,
+.bs-app .add-book-field select,
+.bs-app .add-book-field textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 11px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+/* Shorter description field */
+.bs-app .add-book-field textarea {
+  height: 72px;
+  min-height: 72px;
+  resize: vertical;
+}
+
+/* Focus states */
+.bs-app .add-book-field :is(input, select, textarea):focus-visible,
+.bs-app .add-book-upload-area:focus-within {
+  border-color: var(--focus-ring);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   COMPACT BOOK COVER SECTION
+   ========================================================= */
+
+.bs-app .add-book-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color);
+}
+
+.bs-app .add-book-upload-heading h4 {
+  margin: 0 0 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.bs-app .add-book-upload-heading p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* Compact horizontal upload box */
+.bs-app .add-book-upload-area {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px 12px;
+  width: 100%;
+  min-height: 0;
+  padding: 12px 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 11px;
+  background: var(--bg-secondary);
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.bs-app .add-book-upload-area:hover {
+  border-color: var(--focus-ring);
+  background: var(--bg-hover);
+}
+
+.bs-app .add-book-upload-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--brand-soft);
+  color: var(--focus-ring);
+  font-size: 18px;
+}
+
+.bs-app .add-book-upload-title {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bs-app .add-book-upload-hint {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.bs-app .add-book-upload-area input[type="file"] {
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   COVER PREVIEW
+   ========================================================= */
+
+.bs-app .add-book-cover-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.bs-app .add-book-cover-preview img {
+  display: block;
+  width: 120px;
+  max-width: 100%;
+  max-height: 170px;
+  object-fit: contain;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+
+.bs-app .add-book-cover-preview .secondary-button,
+.bs-app .add-book-cancel {
+  min-height: 40px;
+  padding: 9px 15px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bs-app .add-book-cover-preview .secondary-button:hover,
+.bs-app .add-book-cancel:hover {
+  background: var(--bg-hover);
+}
+
+/* =========================================================
+   ERRORS AND FORM ACTIONS
+   ========================================================= */
+
+.bs-app .add-book-form-error {
+  margin: 16px 0 0;
+}
+
+.bs-app .add-book-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color);
+}
+
+.bs-app .add-book-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 45px;
+  padding: 11px 22px;
+  border: 1px solid var(--brand-primary);
+  border-radius: 10px;
+  background: var(--brand-primary);
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgb(53 16 31 / 15%);
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.bs-app .add-book-submit:hover:not(:disabled) {
+  background: var(--brand-hover);
+  transform: translateY(-1px);
+}
+
+.bs-app .add-book-submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* =========================================================
+   TABLET AND MOBILE
+   ========================================================= */
+
+@media (max-width: 650px) {
+  .bs-app .add-book-page {
+    padding: 0 0 24px;
+  }
+
+  .bs-app .add-book-form {
+    padding: 20px 17px;
+    border-radius: 14px;
+  }
+
+  .bs-app .add-book-form-header {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+
+  .bs-app .add-book-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .bs-app .add-book-field-full {
+    grid-column: auto;
+  }
+
+  .bs-app .add-book-field textarea {
+    height: 72px;
+    min-height: 72px;
+  }
+
+  .bs-app .add-book-upload-section {
+    margin-top: 18px;
+    padding-top: 16px;
+  }
+
+  .bs-app .add-book-upload-area {
+    padding: 12px;
+  }
+
+  .bs-app .add-book-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .bs-app .add-book-form-actions button {
+    width: 100%;
+  }
+
+  .bs-app .add-book-success {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bs-app .add-book-submit {
+    transition: none;
+  }
+
+  .bs-app .add-book-submit:hover:not(:disabled) {
+    transform: none;
+  }
+}
+.bs-app .add-book-page-bottom {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-top: 16px;
+  padding-bottom: 8px;
+}
+
+.bs-app .add-book-page-bottom .bs-text-button {
+  font-size: 13px;
+  font-weight: 600;
+}
